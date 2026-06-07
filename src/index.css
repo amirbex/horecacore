@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --font-en: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-ivory: #F5F2EB;
+  --color-charcoal-dark: #1C1C1E;
+  --color-soft-black: #2C2C2C;
+  --color-soft-gold: #C2A77D;
+  --color-gray-light: #E5E1DA;
+  --color-gray-dark: #8A8884;
+}
+
+body {
+  background-color: var(--color-ivory);
+  color: var(--color-soft-black);
+  margin: 0;
+  padding: 0;
+}
+
+/* Snap container replaced with simple smooth scroll container */
+.snap-container {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+
+.snap-slide {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+/* Utility for hiding scrollbars in internal scrolling sections */
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Typography styles */
+.font-en {
+  font-family: var(--font-en);
+}
+
+.text-gold-accent {
+  color: var(--color-soft-gold);
+}
+
+/* Custom Interactive Utilities */
+.btn-core {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  transition: all 0.5s ease;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--color-soft-black);
+}
+
+.btn-core::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  transition: border-color 0.5s ease;
+}
+
+.btn-core:hover::before {
+  border-color: var(--color-soft-gold);
+}
+
+.btn-core-gold {
+  background-color: var(--color-soft-gold);
+  color: #1C1C1E;
+  border: none;
+}
+.btn-core-gold:hover {
+  background-color: transparent;
+  color: var(--color-soft-gold);
+  border: 1px solid var(--color-soft-gold);
+}
+
+/* Thin lines */
+.hairline-h {
+  height: 1px;
+  width: 100%;
+  background-color: var(--color-gray-light);
+}
+
+.hairline-v {
+  width: 1px;
+  height: 100%;
+  background-color: var(--color-gray-light);
+}
+

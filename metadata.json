@@ -1,0 +1,8 @@
+{
+  "name": "Remix: HoReCa Core Strategic Portfolio",
+  "description": "High-end presentation website for HoReCa business development and hospitality consulting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
