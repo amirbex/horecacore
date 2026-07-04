@@ -44,14 +44,14 @@ export default function Home() {
           phaseNumberNum="۱"
           phaseNumberRoman="I"
           phaseTitle="مشاوره و طراحی کسب‌وکار"
-          duration="۴ ماه"
+          duration=" 3 to 6 months "
           data={phase1FullData}
         />
         <SlidePhaseContent 
           phaseNumberNum="۲"
           phaseNumberRoman="II"
           phaseTitle="راه‌اندازی و توسعه منو"
-          duration="۳ ماه"
+          duration="1 to 3 months "
           data={phase2FullData}
         />
         <SlidePhaseContent 

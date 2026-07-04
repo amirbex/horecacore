@@ -76,7 +76,7 @@ export default function SlideCoreHero({ animateIn = true, content }: { animateIn
             style={{ letterSpacing }}
             className="font-en text-soft-gold uppercase text-sm md:text-base -mb-2 z-10 px-4 text-center whitespace-nowrap bg-charcoal-dark/50 backdrop-blur-sm rounded-full py-1"
           >
-            THE ORBIT SYSTEM
+            THE ELITE SYSTEM
           </motion.span>
           <motion.div 
             initial={{ scaleY: 0 }}
