@@ -7,9 +7,9 @@ import { Link } from 'react-router-dom';
 export default function SlideContact({ content }: { content?: SiteContent }) {
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
 
-  const contactPhone = content?.settings?.contactPhone || "+98 (912) 000 0000";
-  const contactEmail = content?.settings?.contactEmail || "strategy@horecacore.com";
-  const contactAddress = content?.settings?.contactAddress || "تهران - دفتر مرکزی معماری ارزش هورکا";
+  const contactPhone = content?.settings?.contactPhone || "+98 (912) 785 3080";
+  const contactEmail = content?.settings?.contactEmail || "strategy@horecacore.info";
+  const contactAddress = content?.settings?.contactAddress || "تهران - سعادت آباد";
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
