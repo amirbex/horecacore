@@ -41,11 +41,11 @@ export default function Contact() {
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium tracking-widest text-gold uppercase mb-1">Direct Line</span>
-                <span className="text-xl text-bone font-light" dir="ltr">+98 (0) 912 000 0000</span>
+                <span className="text-xl text-bone font-light" dir="ltr">+98 (0) 912 785 3080</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium tracking-widest text-gold uppercase mb-1">Email</span>
-                <span className="text-xl text-bone font-light font-sans tracking-wide">strategy@horecacore.com</span>
+                <span className="text-xl text-bone font-light font-sans tracking-wide">strategy@horecacore.info</span>
               </div>
             </motion.div>
           </div>
