@@ -88,9 +88,9 @@ const DEFAULT_CONTENT: SiteContent = {
   ],
   networkPartners: [],
   settings: {
-    contactPhone: "+98 (912) 000 0000",
-    contactEmail: "strategy@horecacore.com",
-    contactAddress: "تهران - دفتر مرکزی معماری ارزش هورکا"
+    contactPhone: "+98 (912) 785 3080",
+    contactEmail: "strategy@horecacore.info",
+    contactAddress: "تهران - سعادت آباد"
   }
 };
 
