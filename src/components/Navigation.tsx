@@ -1,45 +1,59 @@
-import { useEffect, useState } from 'react';
-
-const navItems = [
-  { id: 'slide-hero', label: 'معرفی' },
-  { id: 'slide-industry', label: 'صنعت' },
-  { id: 'slide-network', label: 'بوم شبکه' },
-  { id: 'slide-phases', label: 'فازها' },
-  { id: 'slide-team', label: 'تیم' },
-  { id: 'slide-financials', label: 'مالی' },
-  { id: 'slide-contact', label: 'ارتباط' },
-];
+import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect } from 'react';
 
 export default function Navigation() {
-  const [activeId, setActiveId] = useState('slide-hero');
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveId(entry.target.id);
-        }
-      });
-    }, { threshold: 0.5 });
-    
-    navItems.forEach(item => {
-      const el = document.getElementById(item.id);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-     <nav className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-6" dir="rtl">
-        {navItems.map(item => (
-           <a key={item.id} href={`#${item.id}`} className="group flex items-center gap-4 relative">
-              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${activeId === item.id ? 'bg-soft-gold scale-150 shadow-[0_0_8px_rgba(194,167,125,0.6)]' : 'bg-gray-400/50 hover:bg-soft-gold'}`} />
-              <span className={`absolute right-6 text-sm font-light whitespace-nowrap transition-all duration-300 ${activeId === item.id ? 'opacity-100 text-soft-gold' : 'opacity-0 group-hover:opacity-100 text-gray-dark'}`}>
-                 {item.label}
-              </span>
-           </a>
-        ))}
-     </nav>
-  )
+    <>
+      <motion.div 
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-6 left-6 md:left-10 z-[100]"
+      >
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-12 h-12 flex flex-col items-center justify-center gap-1.5 rounded-full backdrop-blur-md border transition-all shadow-sm ${scrolled ? 'bg-white/90 border-gray-200 hover:bg-white' : 'bg-white/50 border-gray-300 hover:bg-white/80'}`}
+        >
+          <motion.span 
+            animate={isOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }}
+            className="w-5 h-[2px] rounded-full transition-colors bg-[#1A1F24]"
+          />
+          <motion.span 
+            animate={isOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }}
+            className="w-5 h-[2px] rounded-full transition-colors bg-[#1A1F24]"
+          />
+        </button>
+      </motion.div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] bg-[#1A1F24]/95 backdrop-blur-md flex flex-col items-center justify-center font-sans"
+          >
+            <nav className="flex flex-col items-center gap-8 text-white/90 text-2xl font-light">
+              <a href="#slide-hero" onClick={() => setIsOpen(false)} className="hover:text-brand-orange transition-colors">خانه</a>
+              <a href="#slide-industry" onClick={() => setIsOpen(false)} className="hover:text-brand-orange transition-colors">درباره ما</a>
+              <a href="#slide-phases" onClick={() => setIsOpen(false)} className="hover:text-brand-orange transition-colors">فازهای اجرایی</a>
+              <a href="#slide-team" onClick={() => setIsOpen(false)} className="hover:text-brand-orange transition-colors">تیم ما</a>
+              <a href="#slide-contact" onClick={() => setIsOpen(false)} className="hover:text-brand-orange transition-colors">تماس با ما</a>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
 }

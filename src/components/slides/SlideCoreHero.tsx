@@ -1,176 +1,480 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
-import { useRef } from 'react';
-import ParticleBackground from '../ParticleBackground';
 import { SiteContent } from '../../store/mockDb';
 
-export default function SlideCoreHero({ animateIn = true, content }: { animateIn?: boolean, content?: SiteContent }) {
+const CX = 200, CY = 200;
+const CORE = "#1A1F24", SAGE = "#A8BCA8", ORANGE = "#FF8C42";
+
+function polar(r: number, deg: number) {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
+}
+
+function ringSegment(rOuter: number, rInner: number, start: number, end: number) {
+  const so = polar(rOuter, start);
+  const eo = polar(rOuter, end);
+  const si = polar(rInner, start);
+  const ei = polar(rInner, end);
+  const large = Math.abs(end - start) > 180 ? 1 : 0;
+  const sweep = end > start ? 1 : 0;
+  const rev = 1 - sweep;
+  return [
+    "M", so.x, so.y,
+    "A", rOuter, rOuter, 0, large, sweep, eo.x, eo.y,
+    "L", ei.x, ei.y,
+    "A", rInner, rInner, 0, large, rev, si.x, si.y,
+    "Z"
+  ].join(" ");
+}
+
+function arcPath(r: number, start: number, end: number) {
+  const s = polar(r, start);
+  const e = polar(r, end);
+  const large = Math.abs(end - start) > 180 ? 1 : 0;
+  const sweep = end > start ? 1 : 0;
+  return ["M", s.x, s.y, "A", r, r, 0, large, sweep, e.x, e.y].join(" ");
+}
+
+const segDelays = [
+  { c: "ls-seg-d1", dx: -50, dy: -30, rot: 12 },
+  { c: "ls-seg-d2", dx: 55, dy: -26, rot: -8 },
+  { c: "ls-seg-d3", dx: 42, dy: 45, rot: 15 },
+  { c: "ls-seg-d4", dx: -46, dy: 38, rot: -10 },
+  { c: "ls-seg-d5", dx: 0, dy: -60, rot: 6 },
+  { c: "ls-seg-d6", dx: 60, dy: 12, rot: -14 },
+  { c: "ls-seg-d7", dx: -22, dy: 55, rot: 10 },
+  { c: "ls-seg-d8", dx: -55, dy: -12, rot: -6 },
+  { c: "ls-seg-d9", dx: 32, dy: -52, rot: 8 },
+  { c: "ls-seg-d10", dx: 50, dy: 35, rot: -12 }
+];
+
+export default function SlideCoreHero({ content, onIntroComplete }: { content?: SiteContent, onIntroComplete?: () => void }) {
+  const [isIntro, setIsIntro] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Create a scroll-based parallax tied specifically to this view
+  useEffect(() => {
+    // Lock scroll during intro
+    if (isIntro) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isIntro]);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"]
   });
 
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 80, damping: 20, restDelta: 0.001 });
-
-  // Scroll animations for logo motion
-  const yParallax = useTransform(smoothProgress, [0, 1], ["0%", "40%"]);
-  const yParallaxFast = useTransform(smoothProgress, [0, 1], ["0%", "70%"]);
-  const opacityFade = useTransform(smoothProgress, [0, 0.9], [1, 0]);
   
-  // Transform rings into a wider, flatter perspective as we scroll 
-  const rotateCoreResponsive = useTransform(smoothProgress, [0, 1], [0, 180]);
-  const scaleRingsOut = useTransform(smoothProgress, [0, 1], [1, 1.8]);
-  const stretchRings = useTransform(smoothProgress, [0, 1], [1, 0.4]); 
-
-  // Logo text spreading out
-  const titleScale = useTransform(smoothProgress, [0, 1], [1, 1.4]);
-  const letterSpacing = useTransform(smoothProgress, [0, 1], ["0.1em", "1em"]);
-  const letterSpacingHero = useTransform(smoothProgress, [0, 1], ["0em", "0.6em"]);
-  const innerRingScale = useTransform(smoothProgress, [0, 1], [1, 4]);
-  const innerRingOpacity = useTransform(smoothProgress, [0, 0.4], [1, 0]);
+  // Opacity fade out when scrolling
+  const opacityFade = useTransform(smoothProgress, [0, 0.5], [1, 0]);
   
-  const textBlurOut = useTransform(smoothProgress, [0, 1], ["blur(0px)", "blur(10px)"]);
+  // Zooming effect for the logo when scrolling
+  const logoZoom = useTransform(smoothProgress, [0, 1], [1, 4]);
+  
+  // Scattering effect for logo pieces
+  const scatterOuterScale = useTransform(smoothProgress, [0, 1], [1, 2.8]);
+  const scatterOuterRot = useTransform(smoothProgress, [0, 1], [0, 90]);
+  const scatterMidScale = useTransform(smoothProgress, [0, 1], [1, 1.8]);
+  const scatterMidRot = useTransform(smoothProgress, [0, 1], [0, -45]);
+  const scatterInnerScale = useTransform(smoothProgress, [0, 1], [1, 0.2]);
+
+  useEffect(() => {
+    // Intro lasts 5.5 seconds before transitioning to hero state
+    const t = setTimeout(() => {
+      setIsIntro(false);
+      if (onIntroComplete) onIntroComplete();
+    }, 5500);
+    return () => clearTimeout(t);
+  }, [onIntroComplete]);
 
   return (
-    <section id="slide-hero" ref={containerRef} className="snap-slide bg-charcoal-dark flex items-center justify-center overflow-hidden relative">
-      <ParticleBackground />
-      {/* Background Dynamic Rings - Scroll Reactive */}
-      <motion.div 
-        style={{ y: yParallax, opacity: opacityFade, scaleX: scaleRingsOut, scaleY: stretchRings }}
-        className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
-      >
-        <motion.div 
-          animate={{ rotate: 360 }}
-          style={{ rotate: rotateCoreResponsive }}
-          transition={{ duration: 160, repeat: Infinity, ease: "linear" }}
-          className="absolute shrink-0 w-[60vh] h-[60vh] md:w-[80vh] md:h-[80vh] rounded-full border border-soft-gold/30"
-        />
-        <motion.div 
-          animate={{ rotate: -360 }}
-          style={{ rotate: rotateCoreResponsive }}
-          transition={{ duration: 240, repeat: Infinity, ease: "linear" }}
-          className="absolute shrink-0 w-[80vh] h-[80vh] md:w-[100vh] md:h-[100vh] rounded-full border border-white/5 border-dashed"
-        />
-        <motion.div 
-          animate={{ rotate: 180 }}
-          transition={{ duration: 300, repeat: Infinity, ease: "linear" }}
-          className="absolute shrink-0 w-[100vh] h-[100vh] md:w-[130vh] md:h-[130vh] rounded-full border border-white/5"
-        />
-      </motion.div>
+    <section 
+      ref={containerRef}
+      className="snap-slide relative w-full min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden bg-[#f2f5f8] text-[#1A1F24] select-none" 
+      id="slide-hero"
+    >
+      <style>{`
+        .ls-stage {
+          --core: #1A1F24;
+          --sage: #A8BCA8;
+          --orange: #FF8C42;
+          --grid: rgba(168, 188, 168, 0.25);
+          --grid-light: rgba(168, 188, 168, 0.1);
+        }
 
-      {/* Main Core Content - Logo Motion Scroll */}
-      <motion.div 
-        style={{ y: yParallaxFast, opacity: opacityFade, filter: textBlurOut }}
-        className="relative z-10 flex flex-col items-center justify-center pointer-events-auto w-full"
-      >
-        {/* Entry / Setup Animation + Scroll Transform */}
+        .ls-bg {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(var(--grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+            linear-gradient(var(--grid-light) 1px, transparent 1px),
+            linear-gradient(90deg, var(--grid-light) 1px, transparent 1px);
+          background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+          background-position: center center;
+          z-index: 0;
+        }
+
+        .ls-vignette {
+          pointer-events: none;
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 50% 50%, transparent 15%, rgba(242,245,248,0.95) 100%);
+          z-index: 1;
+        }
+
+        .ls-noise {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          opacity: 0.4;
+          background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+          mix-blend-mode: multiply;
+        }
+
+        @keyframes ls-core-appear {
+          0% { opacity: 0; transform: scale(0.2); }
+          45% { opacity: 1; transform: scale(1.18); }
+          70% { transform: scale(0.94); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes ls-core-glow {
+          0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+          50% { filter: drop-shadow(0 0 12px rgba(26, 31, 36, 0.35)); }
+        }
+        @keyframes ls-wire-draw {
+          0% { stroke-dashoffset: 1; opacity: 0; }
+          15% { opacity: 0.9; }
+          100% { stroke-dashoffset: 0; opacity: 0.55; }
+        }
+        @keyframes ls-segment-slide-in {
+          0% {
+            opacity: 0;
+            transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.7) rotate(calc(var(--rot, 0deg) * 0.1deg));
+          }
+          60% {
+            opacity: 1;
+            transform: translate(calc(var(--dx, 0px) * 0.08), calc(var(--dy, 0px) * 0.08)) scale(1.04) rotate(0deg);
+          }
+          82% { transform: translate(0, 0) scale(0.98); }
+          100% { opacity: 1; transform: translate(0, 0) scale(1); }
+        }
+        @keyframes ls-tick-lock {
+          0% { opacity: 0; transform: scale(0); filter: blur(2px); }
+          50% { opacity: 1; transform: scale(1.4); filter: blur(0); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes ls-text-rise {
+          0% { opacity: 0; transform: translateY(24px); letter-spacing: 0.2em; filter: blur(8px); }
+          100% { opacity: 1; transform: translateY(0); letter-spacing: 0.06em; filter: blur(0); }
+        }
+        @keyframes ls-fa-rise {
+          0% { opacity: 0; transform: translateY(20px); filter: blur(8px); }
+          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes ls-rotate-cw {
+          0% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+          5% { transform: rotate(18deg); animation-timing-function: linear; }
+          100% { transform: rotate(378deg); }
+        }
+        @keyframes ls-rotate-ccw {
+          0% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+          5% { transform: rotate(-18deg); animation-timing-function: linear; }
+          100% { transform: rotate(-378deg); }
+        }
+        @keyframes ls-dim-fade { 0% { opacity: 0; } 100% { opacity: 0.45; } }
+        @keyframes ls-pulse-ring {
+          0% { opacity: 0; transform: scale(0.6); stroke-width: 3px; }
+          40% { opacity: 0.4; }
+          100% { opacity: 0; transform: scale(2.2); stroke-width: 0.5px; }
+        }
+
+        .ls-anim-core { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-core-appear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards, ls-core-glow 2.4s ease-in-out 1.4s infinite; }
+        .ls-anim-pulse-ring { opacity: 0; transform-origin: 200px 200px; animation: ls-pulse-ring 1.2s ease-out 0.55s forwards; }
+        .ls-anim-wire { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; animation: ls-wire-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards; }
+        .ls-anim-segment { opacity: 0; transform-origin: 200px 200px; animation: ls-segment-slide-in 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .ls-anim-tick { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-tick-lock 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .ls-anim-dims { opacity: 0; animation: ls-dim-fade 1s ease 2.2s forwards; }
+
+        .ls-rotate-outer { transform-origin: 200px 200px; animation: ls-rotate-cw 30s infinite; animation-delay: 4.5s; }
+        .ls-rotate-inner { transform-origin: 200px 200px; animation: ls-rotate-ccw 20s infinite; animation-delay: 4.5s; }
+        .ls-rotate-mid { transform-origin: 200px 200px; animation: ls-rotate-cw 45s infinite; animation-delay: 4.5s; }
+
+        .ls-seg-d1 { animation-delay: 2.50s; --dx: -50px; --dy: -30px; }
+        .ls-seg-d2 { animation-delay: 2.58s; --dx: 55px;  --dy: -25px; }
+        .ls-seg-d3 { animation-delay: 2.66s; --dx: 45px;  --dy: 45px; }
+        .ls-seg-d4 { animation-delay: 2.74s; --dx: -45px; --dy: 40px; }
+        .ls-seg-d5 { animation-delay: 2.82s; --dx: 0px;   --dy: -60px; }
+        .ls-seg-d6 { animation-delay: 2.90s; --dx: 60px;  --dy: 10px; }
+        .ls-seg-d7 { animation-delay: 2.98s; --dx: -25px; --dy: 55px; }
+        .ls-seg-d8 { animation-delay: 3.06s; --dx: -55px; --dy: -15px; }
+        .ls-seg-d9 { animation-delay: 3.12s; --dx: 35px;  --dy: -50px; }
+        .ls-seg-d10{ animation-delay: 3.18s; --dx: 50px;  --dy: 35px; }
+        .ls-tick-d1 { animation-delay: 3.00s; }
+        .ls-tick-d2 { animation-delay: 3.08s; }
+        .ls-tick-d3 { animation-delay: 3.16s; }
+        .ls-tick-d4 { animation-delay: 3.24s; }
+      `}</style>
+      
+      <div className="ls-stage ls-bg" />
+      <div className="ls-noise" />
+      <div className="ls-vignette" />
+
+      <motion.div style={{ opacity: opacityFade }} className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4 max-w-7xl mx-auto pt-24 pb-16">
+        
+        {/* Animated Logo and Brand Text Wrapper */}
         <motion.div
-          initial={{ opacity: 0, y: 40, scale: 1.05 }}
-          animate={animateIn ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 1.05 }}
-          transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center mb-6 lg:mb-12 relative w-full"
+          layout
+          className={`relative flex items-center justify-center z-20 ${isIntro ? 'flex-col gap-6 mb-8' : 'flex-col sm:flex-row gap-4 mb-4'}`}
+          transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
         >
-          <motion.span 
-            style={{ letterSpacing }}
-            className="font-en text-soft-gold uppercase text-sm md:text-base -mb-2 z-10 px-4 text-center whitespace-nowrap bg-charcoal-dark/50 backdrop-blur-sm rounded-full py-1"
+          {/* Animated Logo Container */}
+          <motion.div
+            layout
+            animate={isIntro ? {
+              width: "min(75vw, 260px)",
+              height: "min(75vw, 260px)"
+            } : {
+              width: "min(35vw, 140px)",
+              height: "min(35vw, 140px)"
+            }}
+            transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
+            className="relative flex justify-center items-center transform-gpu shrink-0"
           >
-            THE ELITE SYSTEM
-          </motion.span>
-          <motion.div 
-            initial={{ scaleY: 0 }}
-            animate={animateIn ? { scaleY: 1 } : { scaleY: 0 }}
-            transition={{ duration: 1, delay: 0.6 }}
-            className="h-[40px] w-[2px] bg-gradient-to-b from-soft-gold to-transparent mt-2 origin-top"
-          ></motion.div>
+            <motion.div
+              style={{ scale: logoZoom }}
+              className="w-full h-full relative"
+            >
+              <div className="absolute inset-[6%] rounded-full bg-white/45 shadow-[0_0_60px_rgba(168,188,168,0.15),inset_0_0_20px_rgba(255,255,255,0.8)] backdrop-blur-[3px]" />
+              
+              <svg viewBox="0 0 400 400" className="relative w-full h-full block z-10 drop-shadow-xl" role="img" aria-label="HoReCa CORE technical blueprint">
+                <defs>
+                  <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#1a1f24" floodOpacity="0.2"/>
+                  </filter>
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                  </filter>
+                </defs>
+
+                {/* Dimension guides */}
+                <g className="ls-anim-dims" stroke="#9db4c7" strokeWidth="0.7" fill="none">
+                  <rect x="58" y="58" width="284" height="284" strokeDasharray="3 4"/>
+                  <line x1="58" y1="42" x2="342" y2="42"/><line x1="58" y1="36" x2="58" y2="48"/><line x1="342" y1="36" x2="342" y2="48"/>
+                  <text x="200" y="34" textAnchor="middle" fill="#9db4c7" fontSize="10" fontFamily="Inter, sans-serif" stroke="none">H</text>
+                  <line x1="42" y1="58" x2="42" y2="342"/><line x1="36" y1="58" x2="48" y2="58"/><line x1="36" y1="342" x2="48" y2="342"/>
+                  <text x="28" y="204" textAnchor="middle" fill="#9db4c7" fontSize="10" fontFamily="Inter, sans-serif" stroke="none" transform="rotate(-90 28 204)">H</text>
+                  <line x1="358" y1="120" x2="358" y2="200"/><line x1="352" y1="120" x2="364" y2="120"/><line x1="352" y1="200" x2="364" y2="200"/>
+                  <text x="372" y="164" textAnchor="middle" fill="#9db4c7" fontSize="10" fontFamily="Inter, sans-serif" stroke="none">H</text>
+                  <line x1="358" y1="200" x2="358" y2="280"/><line x1="352" y1="280" x2="364" y2="280"/>
+                  <text x="372" y="244" textAnchor="middle" fill="#9db4c7" fontSize="10" fontFamily="Inter, sans-serif" stroke="none">H</text>
+                  <line x1="200" y1="70" x2="200" y2="330" strokeDasharray="2 5" opacity="0.6"/>
+                  <line x1="70" y1="200" x2="330" y2="200" strokeDasharray="2 5" opacity="0.6"/>
+                  <line x1="90" y1="90" x2="310" y2="310" strokeDasharray="1 6" opacity="0.35"/>
+                  <line x1="310" y1="90" x2="90" y2="310" strokeDasharray="1 6" opacity="0.35"/>
+                </g>
+
+                {/* Wireframe rings */}
+                <g fill="none" stroke="#1a1f24" strokeWidth="0.9" strokeLinecap="round" pathLength={1}>
+                  {[48, 68, 88, 108, 128, 148].map((r, i) => (
+                    <circle key={`wire-${i}`} className="ls-anim-wire" cx={CX} cy={CY} r={r} style={{ animationDelay: `${1.5 + i * 0.08}s`, opacity: 0.4 }} />
+                  ))}
+                  <path className="ls-anim-wire" d={arcPath(158, -20, 100)} style={{ animationDelay: "1.95s" }} />
+                  <path className="ls-anim-wire" d={arcPath(158, 120, 220)} style={{ animationDelay: "2.0s" }} />
+                  <path className="ls-anim-wire" d={arcPath(158, 240, 320)} style={{ animationDelay: "2.05s" }} />
+                </g>
+
+                {/* OUTER CW */}
+                <motion.g style={{ scale: scatterOuterScale, rotate: scatterOuterRot, transformOrigin: '200px 200px' }}>
+                  <g className="ls-rotate-outer">
+                    {[
+                      [152, 132, -15, 55, SAGE, 1],
+                      [152, 134, 70, 118, SAGE, 0.8],
+                      [150, 128, 200, 255, SAGE, 1],
+                      [148, 130, 280, 330, SAGE, 0.9],
+                      [150, 118, 55, 78, CORE, 1],
+                      [148, 112, 175, 198, CORE, 1],
+                      [146, 122, 255, 272, CORE, 1],
+                      [154, 138, 58, 66, ORANGE, 1],
+                      [154, 138, 112, 120, ORANGE, 1],
+                      [152, 136, 268, 276, ORANGE, 1],
+                      [152, 136, 318, 326, ORANGE, 1]
+                    ].map((s, i) => (
+                      <path key={`outer-${i}`} className={`ls-anim-segment ${segDelays[i % 10].c}`} d={ringSegment(s[0] as number, s[1] as number, s[2] as number, s[3] as number)} fill={s[4] as string} opacity={(s[5] as number) < 1 ? s[5] as number : undefined} />
+                    ))}
+                    <rect className="ls-anim-segment ls-seg-d2" x="48" y="194" width="22" height="8" rx="1" fill={ORANGE} style={{ animationDelay: "3.05s", "--dx": "-40px", "--dy": "0px" } as any} />
+                    <rect className="ls-anim-segment ls-seg-d3" x="48" y="204" width="18" height="5" rx="1" fill={CORE} style={{ animationDelay: "3.1s", "--dx": "-40px", "--dy": "0px" } as any} />
+                    <rect className="ls-anim-segment ls-seg-d4" x="330" y="194" width="22" height="8" rx="1" fill={ORANGE} style={{ animationDelay: "3.05s", "--dx": "40px", "--dy": "0px" } as any} />
+                    <rect className="ls-anim-segment ls-seg-d5" x="334" y="204" width="18" height="5" rx="1" fill={CORE} style={{ animationDelay: "3.1s", "--dx": "40px", "--dy": "0px" } as any} />
+                    {[{ a: 28, r: 142, d: "ls-tick-d1" }, { a: 105, r: 140, d: "ls-tick-d2" }, { a: 230, r: 138, d: "ls-tick-d3" }, { a: 305, r: 144, d: "ls-tick-d4" }].map((dot, i) => {
+                      const p = polar(dot.r, dot.a);
+                      return <circle key={`outer-dot-${i}`} className={`ls-anim-tick ${dot.d}`} cx={p.x.toFixed(2)} cy={p.y.toFixed(2)} r="4.5" fill={ORANGE} filter="url(#glow)" />;
+                    })}
+                  </g>
+                </motion.g>
+
+                {/* MID slow CW */}
+                <motion.g style={{ scale: scatterMidScale, rotate: scatterMidRot, transformOrigin: '200px 200px' }}>
+                  <g className="ls-rotate-mid">
+                    {[
+                      [118, 100, -5, 70, SAGE, 0.95],
+                      [120, 102, 95, 145, SAGE, 0.6],
+                      [118, 98, 160, 210, CORE, 1],
+                      [116, 100, 230, 280, SAGE, 1],
+                      [118, 104, 300, 340, SAGE, 0.8]
+                    ].map((s, i) => (
+                      <path key={`mid-${i}`} className={`ls-anim-segment ${segDelays[(i + 2) % 10].c}`} d={ringSegment(s[0] as number, s[1] as number, s[2] as number, s[3] as number)} fill={s[4] as string} opacity={(s[5] as number) < 1 ? s[5] as number : undefined} />
+                    ))}
+                    {[{ a: 0, len: 18 }, { a: 90, len: 14 }, { a: 180, len: 16 }, { a: 270, len: 12 }].map((bar, i) => {
+                      const inner = polar(88, bar.a);
+                      const outer = polar(88 + bar.len, bar.a);
+                      return <line key={`mid-line-${i}`} className={`ls-anim-segment ${segDelays[i % 10].c}`} x1={inner.x.toFixed(2)} y1={inner.y.toFixed(2)} x2={outer.x.toFixed(2)} y2={outer.y.toFixed(2)} stroke={CORE} strokeWidth="3.5" strokeLinecap="round" />;
+                    })}
+                    {[{ a: 42, r: 110 }, { a: 155, r: 112 }, { a: 248, r: 108 }].map((dot, i) => {
+                      const p = polar(dot.r, dot.a);
+                      return <circle key={`mid-dot-${i}`} className={`ls-anim-tick ls-tick-d${(i % 4) + 1}`} cx={p.x.toFixed(2)} cy={p.y.toFixed(2)} r="3.5" fill={ORANGE} filter="url(#glow)" />;
+                    })}
+                  </g>
+                </motion.g>
+
+                {/* INNER CCW */}
+                <motion.g style={{ scale: scatterInnerScale, transformOrigin: '200px 200px' }}>
+                  <g className="ls-rotate-inner">
+                    {[
+                      [92, 74, 20, 95, SAGE, 1],
+                      [90, 72, 110, 165, SAGE, 0.7],
+                      [92, 76, 185, 240, CORE, 1],
+                      [88, 72, 260, 320, SAGE, 1],
+                      [90, 78, 330, 380, SAGE, 0.85]
+                    ].map((s, i) => (
+                      <path key={`inner-${i}`} className={`ls-anim-segment ${segDelays[i % 10].c}`} d={ringSegment(s[0] as number, s[1] as number, s[2] as number, s[3] as number)} fill={s[4] as string} opacity={(s[5] as number) < 1 ? s[5] as number : undefined} />
+                    ))}
+                    <path className={`ls-anim-segment ${segDelays[5].c}`} d={arcPath(68, 10, 100)} fill="none" stroke={SAGE} strokeWidth="6" strokeLinecap="round" />
+                    <path className={`ls-anim-segment ${segDelays[6].c}`} d={arcPath(68, 130, 200)} fill="none" stroke={CORE} strokeWidth="5" strokeLinecap="round" />
+                    <path className={`ls-anim-segment ${segDelays[7].c}`} d={arcPath(68, 220, 300)} fill="none" stroke={SAGE} strokeWidth="5" strokeLinecap="round" opacity="0.8" />
+                    <path className={`ls-anim-segment ${segDelays[8].c}`} d={ringSegment(58, 48, -30, 50)} fill={SAGE} opacity="0.95" />
+                    <path className={`ls-anim-segment ${segDelays[9].c}`} d={ringSegment(58, 48, 90, 150)} fill={CORE} />
+                    <path className="ls-anim-segment ls-seg-d1" d={ringSegment(56, 48, 180, 250)} fill={SAGE} opacity="0.6" style={{ animationDelay: "3.15s", "--dx": "20px", "--dy": "30px" } as any} />
+                    <path className="ls-anim-segment ls-seg-d2" d={ringSegment(58, 50, 280, 340)} fill={SAGE} style={{ animationDelay: "3.2s", "--dx": "-25px", "--dy": "-20px" } as any} />
+                    {[{ a: 55, r: 80 }, { a: 200, r: 82 }, { a: 310, r: 78 }].map((dot, i) => {
+                      const p = polar(dot.r, dot.a);
+                      return <circle key={`inner-dot-${i}`} className={`ls-anim-tick ls-tick-d${(i % 4) + 1}`} cx={p.x.toFixed(2)} cy={p.y.toFixed(2)} r="3" fill={ORANGE} filter="url(#glow)" />;
+                    })}
+                  </g>
+                </motion.g>
+
+                {/* Static core */}
+                <g>
+                  <circle className="ls-anim-pulse-ring" cx={CX} cy={CY} r="28" fill="none" stroke={CORE} strokeWidth="1.5" />
+                  <circle className="ls-anim-core" cx={CX} cy={CY} r="22" fill={CORE} filter="url(#soft-shadow)" />
+                  <circle className="ls-anim-core" cx={CX - 6} cy={CY - 6} r="4" fill="rgba(255,255,255,0.25)" opacity="1" style={{ animationDelay: "0.65s" }} />
+                </g>
+              </svg>
+            </motion.div>
+          </motion.div>
+          
+          <motion.div
+            layout
+            animate={isIntro ? { scale: 1 } : { scale: 0.85 }}
+            transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
+            className={`flex flex-col justify-center pointer-events-none ${isIntro ? 'items-center' : 'items-center sm:items-start'}`}
+            dir="ltr"
+          >
+             <div className="font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.5s_forwards] tracking-[0.06em] whitespace-nowrap">
+               HoReCa CORE
+             </div>
+             <div className="font-lalezar text-3xl sm:text-4xl text-[#1A1F24] opacity-0 animate-[ls-fa-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.7s_forwards] whitespace-nowrap">
+               هورکا کور
+             </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Hero Text Content - Animates in after intro */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+          animate={isIntro ? { opacity: 0, y: 30, filter: "blur(10px)", display: "none" } : { opacity: 1, y: 0, filter: "blur(0px)", display: "flex" }}
+          transition={{ duration: 1.2, delay: isIntro ? 0 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="z-30 flex-col items-center text-center max-w-4xl mt-2 sm:mt-4 relative"
+        >
+          <h1 
+            className="text-2xl sm:text-3xl md:text-5xl lg:text-5xl font-bold tracking-tight text-[#1A1F24] leading-tight drop-shadow-sm font-sans mt-0"
+            dir="rtl"
+          >
+            طراحی، مهندسی و راه‌اندازی پروژه‌های صنعت خوراک و نوشیدنی
+          </h1>
+          
+          <p 
+            className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-[#374151] leading-relaxed max-w-3xl font-normal font-sans text-center px-4"
+            dir="rtl"
+          >
+            ما در HoReCa Core با ترکیب دانش معماری، مهندسی فرآیند و هنر مهمان‌نوازی، پروژه‌های شما را از یک ایده اولیه به کسب‌وکاری پایدار و سودآور تبدیل می‌کنیم.
+          </p>
+          
+          <div 
+            className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center w-full gap-4 sm:gap-6 font-sans px-4"
+          >
+            <button 
+              onClick={() => {
+                const target = document.getElementById('slide-phases');
+                if (target) {
+                  const targetPosition = target.getBoundingClientRect().top + window.scrollY;
+                  const startPosition = window.scrollY;
+                  const distance = targetPosition - startPosition;
+                  const duration = 30000; 
+                  let start: number | null = null;
+                  let isCancelled = false;
+                  const cancelScroll = () => {
+                    isCancelled = true;
+                    window.removeEventListener('wheel', cancelScroll);
+                    window.removeEventListener('touchstart', cancelScroll);
+                  };
+                  window.addEventListener('wheel', cancelScroll, { passive: true });
+                  window.addEventListener('touchstart', cancelScroll, { passive: true });
+                  const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                  const step = (timestamp: number) => {
+                    if (isCancelled) return;
+                    if (!start) start = timestamp;
+                    const progress = timestamp - start;
+                    const percentage = Math.min(progress / duration, 1);
+                    window.scrollTo(0, startPosition + distance * easeInOutQuad(percentage));
+                    if (progress < duration) window.requestAnimationFrame(step);
+                    else cancelScroll();
+                  };
+                  window.requestAnimationFrame(step);
+                }
+              }}
+              className="group w-full sm:w-auto px-8 py-3.5 bg-white/40 hover:bg-white/60 border border-[#1A1F24]/10 hover:border-[#1A1F24]/30 text-[#1A1F24] rounded-full font-medium tracking-wide transition-all duration-300 backdrop-blur-md shadow-sm hover:shadow text-sm sm:text-base flex items-center justify-center gap-3"
+            >
+              <span>مشاهده سیستم همکاری</span>
+              <svg className="w-4 h-4 -rotate-90 text-[#FF8C42] transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+          </div>
         </motion.div>
         
-        <motion.div
-          initial={{ opacity: 0, filter: "blur(15px)", scale: 1.1 }}
-          animate={animateIn ? { opacity: 1, filter: "blur(0px)", scale: 1 } : { opacity: 0, filter: "blur(15px)", scale: 1.1 }}
-          transition={{ duration: 1.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          style={{ scale: titleScale }}
-          className="relative font-en font-thin text-ivory flex flex-col items-center justify-center glow-text"
-        >
-          {/* Outer HoReCa */}
-          <motion.div 
-            style={{ y: -60, opacity: innerRingOpacity, letterSpacing }} 
-            className="absolute top-[-30px] md:top-0 text-lg md:text-xl tracking-[0.8em] md:tracking-[1em] text-white/40 uppercase font-light pointer-events-none"
-          >
-            HoReCa
-          </motion.div>
-
-          {/* Main Core Typography that spreads out on scroll */}
-          <motion.h1 
-            style={{ letterSpacing: letterSpacingHero }}
-            className="text-6xl sm:text-7xl md:text-[8rem] lg:text-[11rem] tracking-widest relative z-10 text-center uppercase drop-shadow-[0_0_15px_rgba(194,167,125,0.3)]"
-          >
-            CORE
-          </motion.h1>
-
-          {/* Inner Ring cutting across CORE text for depth */}
-          <motion.div 
-            style={{ rotate: rotateCoreResponsive, scale: innerRingScale, opacity: innerRingOpacity }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] md:w-[110%] md:h-[110%] rounded-full border border-soft-gold/30 pointer-events-none z-0"
-          />
-        </motion.div>
-
-        <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={animateIn ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-           transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-           className="mt-16 sm:mt-12 text-center"
-        >
-          <p className="text-white/70 font-light md:text-lg max-w-md mx-auto leading-loose px-4">
-            {content?.heroTitle || 'مرکز هوشمند طراحی، ساختارسازی و توسعه پروژه‌های لوکس و بین‌المللی در صنعت مهمان‌نوازی'}
-          </p>
-          {content?.heroDescription && (
-            <p className="text-white/50 text-sm md:text-base max-w-lg mx-auto leading-loose px-4 mt-4 font-light">
-              {content.heroDescription}
-            </p>
-          )}
-        </motion.div>
       </motion.div>
 
-      {/* Hero CTA Corner */}
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={animateIn ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-        transition={{ duration: 0.8, delay: 1.2 }}
-        style={{ opacity: opacityFade }}
-        className="absolute bottom-12 right-12 md:right-auto md:left-12 z-20"
-      >
-        <button className="flex flex-row-reverse md:flex-row items-center gap-4 text-ivory group">
-          <span className="font-light text-sm md:text-base tracking-wide group-hover:text-soft-gold transition-colors">
-            مشاهده سیستم همکاری
-          </span>
-          <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center group-hover:border-soft-gold group-hover:bg-soft-gold/10 transition-all duration-500 overflow-hidden relative">
-            <div className="w-1.5 h-1.5 rounded-full bg-soft-gold z-10" />
-            
-            {/* Spinning hover effect inside circle */}
-            <motion.div 
-               animate={{ rotate: 360 }}
-               transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-               className="w-full h-full absolute inset-0 border border-soft-gold border-dashed opacity-0 group-hover:opacity-100 rounded-full"
-            />
-          </div>
-        </button>
-      </motion.div>
-
-      {/* Scroll Indicator */}
+      {/* Scroll indicator */}
       <motion.div 
         initial={{ opacity: 0 }}
-        animate={animateIn ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ delay: 1.6, duration: 1 }}
-        style={{ opacity: opacityFade }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10"
+        animate={isIntro ? { opacity: 0 } : { opacity: 1 }}
+        transition={{ duration: 1, delay: 1 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-20 pointer-events-none"
       >
-        <div className="h-16 w-[1px] bg-gradient-to-b from-transparent via-soft-gold/50 to-transparent relative overflow-hidden">
-           <motion.div 
+        <div className="h-16 w-[1px] bg-gradient-to-b from-transparent via-[#A8BCA8] to-transparent relative overflow-hidden">
+           <motion.div
              animate={{ y: [0, 64] }}
              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-             className="w-[2px] h-4 bg-soft-gold absolute left-1/2 -translate-x-1/2 top-0 blur-[1px]"
+             className="w-[2px] h-4 bg-[#FF8C42] absolute left-1/2 -translate-x-1/2 top-0 blur-[1px]"
            />
         </div>
       </motion.div>

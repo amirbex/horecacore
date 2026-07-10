@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
-import LoadingScreen from '../components/slides/LoadingScreen';
 import SlideCoreHero from '../components/slides/SlideCoreHero';
 import SlideIndustry from '../components/slides/SlideIndustry';
 import SlideNetwork from '../components/slides/SlideNetwork';
@@ -14,29 +13,27 @@ import { phase1FullData, phase2FullData, phase3FullData } from '../data/detailed
 import { mockDb, SiteContent } from '../store/mockDb';
 
 export default function Home() {
-  const [loading, setLoading] = useState(true);
   const [content, setContent] = useState<SiteContent>(mockDb.getContent());
+  const [showNav, setShowNav] = useState(false);
 
   useEffect(() => {
     setContent(mockDb.getContent());
+    
+    // Show nav after the intro animation completes (e.g. 7 seconds)
+    const t = setTimeout(() => setShowNav(true), 6500);
+    return () => clearTimeout(t);
   }, []);
 
   return (
     <>
       <AnimatePresence mode="wait">
-        {loading && <LoadingScreen onComplete={() => setLoading(false)} />}
+        {showNav && (
+          <Navigation />
+        )}
       </AnimatePresence>
       
-      <Navigation />
-      
-      {/* 
-        Snap Scrolling Container: 
-        Matches strict horizontal storytelling mapped to vertical scrolling
-      */}
-      <main className="snap-container bg-ivory text-soft-black relative">
-        
-        {/* Pre-render slide structure while loading but keep under loading screen */}
-        <SlideCoreHero animateIn={!loading} content={content} />
+      <main className="snap-container bg-bg-main text-text-primary relative">
+        <SlideCoreHero content={content} onIntroComplete={() => setShowNav(true)} />
         <SlideIndustry content={content} />
         <SlideNetwork content={content} />
         <SlidePhasesOrbit />
@@ -44,14 +41,14 @@ export default function Home() {
           phaseNumberNum="۱"
           phaseNumberRoman="I"
           phaseTitle="مشاوره و طراحی کسب‌وکار"
-          duration=" 3 to 6 months "
+          duration="۴ ماه"
           data={phase1FullData}
         />
         <SlidePhaseContent 
           phaseNumberNum="۲"
           phaseNumberRoman="II"
           phaseTitle="راه‌اندازی و توسعه منو"
-          duration="1 to 3 months "
+          duration="۳ ماه"
           data={phase2FullData}
         />
         <SlidePhaseContent 
@@ -64,7 +61,6 @@ export default function Home() {
         <SlideTeam content={content} />
         <SlideFinancials />
         <SlideContact content={content} />
-
       </main>
     </>
   );

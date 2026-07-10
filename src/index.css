@@ -1,20 +1,63 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500&family=Montserrat:wght@400;500;600;700&family=Lalezar&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
   --font-en: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-ivory: #F5F2EB;
-  --color-charcoal-dark: #1C1C1E;
-  --color-soft-black: #2C2C2C;
-  --color-soft-gold: #C2A77D;
-  --color-gray-light: #E5E1DA;
-  --color-gray-dark: #8A8884;
+  --font-montserrat: "Montserrat", sans-serif;
+  --font-lalezar: "Lalezar", cursive;
+  
+  --color-brand-dark: #1A1F24;
+  --color-brand-sage: #A8BCA8;
+  --color-brand-orange: #FF8C42;
+  --color-brand-white: #FFFFFF;
+
+  --color-bg-main: #F8F9FA;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-dark: #1A1F24;
+  --color-bg-sage-soft: #F0F4F0;
+  --color-bg-orange-soft: #FFF3EC;
+
+  --color-text-primary: #1A1F24;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
+  --color-text-on-dark: #FFFFFF;
+  --color-text-accent: #FF8C42;
+
+  --color-action-primary: #FF8C42;
+  --color-action-primary-hover: #E6732D;
+  --color-action-primary-active: #CC6628;
+  --color-action-primary-disabled: #FFD1B3;
+
+  --color-action-secondary: #A8BCA8;
+  --color-action-secondary-hover: #8FA38F;
+
+  --color-border-light: #E5E7EB;
+  --color-border-default: #D1D5DB;
+  --color-border-focus: #A8BCA8;
+
+  --color-semantic-success: #34D399;
+  --color-semantic-error: #EF4444;
+  --color-semantic-warning: #FF8C42;
+  --color-semantic-info: #3B82F6;
+
+  /* Aliases for some old colors to prevent errors if we missed any string replacement */
+  --color-ivory: var(--color-bg-main);
+  --color-ivory-dark: var(--color-bg-surface);
+  --color-bone: var(--color-bg-main);
+  --color-charcoal-dark: var(--color-bg-dark);
+  --color-charcoal: var(--color-bg-dark);
+  --color-soft-black: var(--color-text-primary);
+  --color-soft-gold: var(--color-brand-orange);
+  --color-gold: var(--color-brand-orange);
+  --color-gold-light: var(--color-bg-orange-soft);
+  --color-gray-light: var(--color-border-light);
+  --color-gray-dark: var(--color-text-muted);
 }
 
 body {
-  background-color: var(--color-ivory);
-  color: var(--color-soft-black);
+  background-color: var(--color-bg-main);
+  color: var(--color-text-primary);
   margin: 0;
   padding: 0;
 }

@@ -95,6 +95,7 @@ export default function SlideNetwork({ content }: { content?: any }) {
       return {
         id: entity.id,
         type: entity.type,
+        connections: entity.connections || [],
         isPartner: entity.type === 'partner' || entity.type === 'supplier',
         angle: (i / displayEntities.length) * Math.PI * 2,
         speed: orbitConfig.speedRange.min + Math.random() * (orbitConfig.speedRange.max - orbitConfig.speedRange.min),
@@ -110,9 +111,9 @@ export default function SlideNetwork({ content }: { content?: any }) {
     });
 
     const particleProperties = {
-      particleColor: 'rgba(197, 160, 89, 0.45)', // soft gold
+      particleColor: 'rgba(255, 140, 66, 0.45)', // soft gold
       particleRadius: 1.5,
-      particleCount: isMobile ? 50 : 100, // increased for richer look
+      particleCount: isMobile ? 150 : 300, // increased for richer look across wider 300vw canvas
       lineLength: isMobile ? 150 : 220, // longer lines
       particleSpeed: 0.2,
     };
@@ -196,7 +197,7 @@ export default function SlideNetwork({ content }: { content?: any }) {
             
             // Create gradient for the line
             const grad = ctx!.createLinearGradient(particles[i].x, particles[i].y, orb.currentX, orb.currentY);
-            grad.addColorStop(0, `rgba(194, 167, 125, ${opacity * 0.2})`);
+            grad.addColorStop(0, `rgba(255, 140, 66, ${opacity * 0.2})`);
             grad.addColorStop(1, `rgba(251, 191, 36, ${opacity * 0.6})`); // Brighter amber near the node
             
             ctx!.strokeStyle = grad;
@@ -227,6 +228,32 @@ export default function SlideNetwork({ content }: { content?: any }) {
           ctx!.stroke();
         }
       }
+      
+      // Lines between connected entities
+      orbits.forEach(orb => {
+        if (orb.connections && orb.connections.length > 0) {
+          orb.connections.forEach(targetId => {
+            const targetOrb = orbits.find(o => o.id === targetId);
+            if (targetOrb) {
+              const dx = targetOrb.currentX - orb.currentX;
+              const dy = targetOrb.currentY - orb.currentY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              if (dist < (isMobile ? 350 : 600)) {
+                const opacity = 0.5 * (1 - dist / (isMobile ? 350 : 600));
+                ctx!.beginPath();
+                ctx!.moveTo(orb.currentX, orb.currentY);
+                ctx!.lineTo(targetOrb.currentX, targetOrb.currentY);
+                ctx!.strokeStyle = `rgba(251, 191, 36, ${opacity})`;
+                ctx!.lineWidth = 0.5;
+                ctx!.setLineDash([2, 4]); // Thin dashed line
+                ctx!.stroke();
+                ctx!.setLineDash([]); // Reset
+              }
+            }
+          });
+        }
+      });
 
       // Direct lines from Core to Filtered items
       if (filterRef.current !== 'all') {
@@ -236,16 +263,16 @@ export default function SlideNetwork({ content }: { content?: any }) {
             ctx!.moveTo(renderCoreX, coreY);
             
             // Draw a sweeping bezier curve
-            const cp1X = renderCoreX + (width * 0.15);
+            const cp1X = renderCoreX + (window.innerWidth * 0.15);
             const cp1Y = coreY;
-            const cp2X = orb.currentX - (width * 0.1);
+            const cp2X = orb.currentX - (window.innerWidth * 0.1);
             const cp2Y = orb.currentY;
             
             ctx!.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, orb.currentX, orb.currentY);
             
             const grad = ctx!.createLinearGradient(renderCoreX, coreY, orb.currentX, orb.currentY);
             grad.addColorStop(0, `rgba(251, 191, 36, 0.5)`);
-            grad.addColorStop(1, `rgba(194, 167, 125, 0.1)`);
+            grad.addColorStop(1, `rgba(255, 140, 66, 0.1)`);
             
             ctx!.strokeStyle = grad;
             ctx!.lineWidth = isMobile ? 1 : 2;
@@ -267,7 +294,7 @@ export default function SlideNetwork({ content }: { content?: any }) {
       let centerShiftX = 0;
       if (isFiltered) {
         // Shift the core conceptually to the left to leave room for the selected ones on the right
-        centerShiftX = -width * 0.15;
+        // centerShiftX = -window.innerWidth * 0.15; // Removed shift as requested
       }
       
       const filteredOrbits = isFiltered ? orbits.filter(o => o.type === filter) : [];
@@ -296,22 +323,22 @@ export default function SlideNetwork({ content }: { content?: any }) {
              const total = filteredOrbits.length;
              
              // Organize neatly in a vertical list/arc on the right side
-             const startY = height * 0.25;
-             const endY = height * 0.75;
+             const startY = coreY - (window.innerHeight * 0.25);
+             const endY = coreY + (window.innerHeight * 0.25);
              // calculate step, but limit it to avoid them being too close
              const stepY = total > 1 ? (endY - startY) / (total - 1) : 0;
-             const myY = total === 1 ? height * 0.5 : startY + (stepY * index);
+             const myY = total === 1 ? coreY : startY + (stepY * index);
              
              // Creates a subtle curve (arc) pointing towards the center
              const normalizedY = total > 1 ? index / (total - 1) : 0.5; // 0 to 1
              const arcX = Math.sin(normalizedY * Math.PI) * (isMobile ? 40 : 80);
              
-             idealX = width - (isMobile ? width * 0.15 : width * 0.25) - arcX;
+             idealX = coreX + (window.innerWidth / 2) - (isMobile ? window.innerWidth * 0.15 : window.innerWidth * 0.25) - arcX;
              idealY = myY;
              
           } else {
              // Move to the left side (around the shifted core)
-             targetX = coreX + centerShiftX - (width * 0.15); // This places them to the left of the shifted core
+             targetX = coreX + centerShiftX - (window.innerWidth * 0.15); // This places them to the left of the shifted core
              finalRadius = orb.baseRadius * 0.45; // compact the unfocused items
              idealX = targetX + Math.cos(orb.angle) * (finalRadius + radiusBreathingX) + wobbleX;
              idealY = targetY + Math.sin(orb.angle) * (finalRadius + radiusBreathingY) + floatY;
@@ -350,8 +377,8 @@ export default function SlideNetwork({ content }: { content?: any }) {
         }
         
         // Repulsion from the top-right text area (Bounding Box)
-        const textMinX = width - (isMobile ? 320 : 520);
-        const textMaxY = isMobile ? 180 : 250;
+        const textMinX = coreX + (window.innerWidth / 2) - (isMobile ? 320 : 520);
+        const textMaxY = coreY - (window.innerHeight / 2) + (isMobile ? 180 : 250);
         
         for (let i = 0; i < orbits.length; i++) {
            if (orbits[i].currentX > textMinX && orbits[i].currentY < textMaxY) {
@@ -417,18 +444,18 @@ export default function SlideNetwork({ content }: { content?: any }) {
 
       ctx!.beginPath();
       ctx!.ellipse(renderCoreX, coreY, orbitConfig.supplierRadius, orbitConfig.supplierRadius * 0.9, 0, 0, Math.PI * 2);
-      ctx!.strokeStyle = 'rgba(194, 167, 125, 0.06)';
+      ctx!.strokeStyle = 'rgba(255, 140, 66, 0.06)';
       ctx!.lineWidth = 1;
       ctx!.stroke();
       
       ctx!.beginPath();
       ctx!.ellipse(renderCoreX, coreY, orbitConfig.partnerRadius, orbitConfig.partnerRadius * 0.9, 0, 0, Math.PI * 2);
-      ctx!.strokeStyle = 'rgba(194, 167, 125, 0.04)';
+      ctx!.strokeStyle = 'rgba(255, 140, 66, 0.04)';
       ctx!.stroke();
 
       ctx!.beginPath();
       ctx!.ellipse(renderCoreX, coreY, orbitConfig.projectRadius, orbitConfig.projectRadius * 0.9, 0, 0, Math.PI * 2);
-      ctx!.strokeStyle = 'rgba(194, 167, 125, 0.02)';
+      ctx!.strokeStyle = 'rgba(255, 140, 66, 0.02)';
       ctx!.stroke();
 
       animationFrameId = requestAnimationFrame(animate);
@@ -450,13 +477,13 @@ export default function SlideNetwork({ content }: { content?: any }) {
   };
 
   const getRoleIcon = (type: string) => {
-    if (type === 'project') return <UtensilsCrossed className="w-5 h-5 text-soft-gold" />;
-    if (type === 'supplier') return <Store className="w-5 h-5 text-soft-gold" />;
-    return <Briefcase className="w-5 h-5 text-soft-gold" />;
+    if (type === 'project') return <UtensilsCrossed className="w-5 h-5 text-brand-orange" />;
+    if (type === 'supplier') return <Store className="w-5 h-5 text-brand-orange" />;
+    return <Briefcase className="w-5 h-5 text-brand-orange" />;
   };
 
   return (
-    <section id="slide-network" className="snap-slide bg-charcoal-dark overflow-hidden relative flex flex-col min-h-screen border-t border-soft-gold/20">
+    <section id="slide-network" className="snap-slide bg-bg-dark overflow-hidden relative flex flex-col min-h-screen border-t border-brand-orange/20">
       
       {/* Header Info */}
       <div className="absolute top-10 right-6 lg:right-16 z-50 pointer-events-none flex flex-col gap-3 max-w-md">
@@ -465,9 +492,9 @@ export default function SlideNetwork({ content }: { content?: any }) {
            whileInView={{ opacity: 1, x: 0 }}
            transition={{ duration: 0.8 }}
         >
-          <h2 className="text-3xl lg:text-4xl font-light text-ivory pointer-events-auto">بوم شبکه ارزش</h2>
-          <p className="text-gray-light font-light mt-2 flex items-center gap-2 pointer-events-auto bg-soft-black/50 p-2 rounded-md backdrop-blur-sm self-start text-xs md:text-sm border border-white/5">
-            <Info className="w-4 h-4 text-soft-gold shrink-0" />
+          <h2 className="text-3xl lg:text-4xl font-light text-text-on-dark pointer-events-auto">بوم شبکه ارزش</h2>
+          <p className="text-border-light font-light mt-2 flex items-center gap-2 pointer-events-auto bg-brand-dark/50 p-2 rounded-md backdrop-blur-sm self-start text-xs md:text-sm border border-white/5">
+            <Info className="w-4 h-4 text-brand-orange shrink-0" />
             برای مشاهده جزئیات، روی پین‌های چرخان یا هسته مرکزی کلیک کنید.
           </p>
         </motion.div>
@@ -477,7 +504,7 @@ export default function SlideNetwork({ content }: { content?: any }) {
       <div className="absolute top-10 left-6 lg:left-10 z-50 flex flex-col items-start gap-2">
          <button 
            onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-           className={`w-12 h-12 flex items-center justify-center rounded-xl backdrop-blur-md border transition-all duration-300 shadow-lg ${isFilterMenuOpen ? 'bg-soft-gold text-charcoal-dark border-soft-gold' : 'bg-charcoal-dark/70 text-ivory border-white/10 hover:border-soft-gold/50'}`}
+           className={`w-12 h-12 flex items-center justify-center rounded-xl backdrop-blur-md border transition-all duration-300 shadow-lg ${isFilterMenuOpen ? 'bg-brand-orange text-brand-dark border-brand-orange' : 'bg-bg-dark/70 text-text-on-dark border-white/10 hover:border-brand-orange/50'}`}
          >
            {isFilterMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
          </button>
@@ -488,50 +515,50 @@ export default function SlideNetwork({ content }: { content?: any }) {
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="flex flex-col bg-charcoal-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl min-w-[200px]"
+                  className="flex flex-col bg-bg-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl min-w-[200px]"
                >
                   <button 
                      onClick={() => setActiveFilter('all')}
-                     className={`text-right px-5 py-3 text-sm transition-colors border-b border-white/5 ${activeFilter === 'all' ? 'text-soft-gold bg-white/5 font-medium' : 'text-ivory hover:bg-white/5'}`}
+                     className={`text-right px-5 py-3 text-sm transition-colors border-b border-white/5 ${activeFilter === 'all' ? 'text-brand-orange bg-white/5 font-medium' : 'text-text-on-dark hover:bg-white/5'}`}
                   >
                      همه موارد
                   </button>
                   <button 
                      onClick={() => setActiveFilter('project')}
-                     className={`text-right px-5 py-3 text-sm transition-colors border-b border-white/5 ${activeFilter === 'project' ? 'text-soft-gold bg-white/5 font-medium' : 'text-ivory hover:bg-white/5'}`}
+                     className={`text-right px-5 py-3 text-sm transition-colors border-b border-white/5 ${activeFilter === 'project' ? 'text-brand-orange bg-white/5 font-medium' : 'text-text-on-dark hover:bg-white/5'}`}
                   >
                      پروژه‌های اجرایی
                   </button>
                   <button 
                      onClick={() => setActiveFilter('partner')}
-                     className={`text-right px-5 py-3 text-sm transition-colors border-b border-white/5 ${activeFilter === 'partner' ? 'text-soft-gold bg-white/5 font-medium' : 'text-ivory hover:bg-white/5'}`}
+                     className={`text-right px-5 py-3 text-sm transition-colors border-b border-white/5 ${activeFilter === 'partner' ? 'text-brand-orange bg-white/5 font-medium' : 'text-text-on-dark hover:bg-white/5'}`}
                   >
                      همکاران استراتژیک
                   </button>
                   <button 
                      onClick={() => setActiveFilter('supplier')}
-                     className={`text-right px-5 py-3 text-sm transition-colors ${activeFilter === 'supplier' ? 'text-soft-gold bg-white/5 font-medium' : 'text-ivory hover:bg-white/5'}`}
+                     className={`text-right px-5 py-3 text-sm transition-colors ${activeFilter === 'supplier' ? 'text-brand-orange bg-white/5 font-medium' : 'text-text-on-dark hover:bg-white/5'}`}
                   >
                      تامین‌کنندگان منابع
                   </button>
                   <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between gap-2 bg-black/20">
                      <button 
                         onClick={() => setZoomLevel(prev => Math.min(prev + 0.2, 2.5))}
-                        className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg text-ivory hover:text-soft-gold hover:bg-white/10 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg text-text-on-dark hover:text-brand-orange hover:bg-white/10 transition-colors"
                         title="بزرگ‌نمایی"
                      >
                         <ZoomIn className="w-5 h-5" />
                      </button>
                      <button 
                         onClick={() => setZoomLevel(1)}
-                        className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg text-ivory hover:text-soft-gold hover:bg-white/10 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg text-text-on-dark hover:text-brand-orange hover:bg-white/10 transition-colors"
                         title="اندازه اصلی"
                      >
                         <Maximize className="w-5 h-5" />
                      </button>
                      <button 
                         onClick={() => setZoomLevel(prev => Math.max(prev - 0.2, 0.4))}
-                        className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg text-ivory hover:text-soft-gold hover:bg-white/10 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg text-text-on-dark hover:text-brand-orange hover:bg-white/10 transition-colors"
                         title="کوچک‌نمایی"
                      >
                         <ZoomOut className="w-5 h-5" />
@@ -544,12 +571,24 @@ export default function SlideNetwork({ content }: { content?: any }) {
 
       {/* Main Orbit Area */}
       <div 
-        className="w-full h-full absolute inset-0 touch-none overflow-hidden transition-transform duration-700 ease-in-out origin-center"
-        style={{ transform: `scale(${zoomLevel})` }}
+        className="absolute touch-none overflow-hidden transition-transform duration-700 ease-in-out origin-center"
+        style={{ 
+          width: '300vw', 
+          height: '300vh', 
+          top: '-100vh', 
+          left: '-100vw',
+          transform: `scale(${zoomLevel})`,
+          backgroundImage: 'radial-gradient(circle, rgba(255, 140, 66,0.15) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}
         ref={containerRef}
       >
-        <canvas 
+        <motion.canvas 
           ref={canvasRef} 
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: false, amount: 0.1 }}
+          transition={{ duration: 2, ease: 'easeOut', delay: 0.5 }}
           className="absolute top-0 left-0 w-full h-full pointer-events-none z-10" 
         />
 
@@ -564,88 +603,89 @@ export default function SlideNetwork({ content }: { content?: any }) {
           if (entity.type === 'supplier') {
              nodeShapeClass = 'rounded-full';
              imgShapeClass = 'rounded-full';
-             sizeClass = 'w-12 h-12 md:w-14 md:h-14';
-             borderClass = 'border-soft-gold/30 border-[1px]';
+             sizeClass = 'w-16 h-16 md:w-20 md:h-20'; // Increased size
+             borderClass = 'border-brand-orange/30 border-[1px]';
           } else if (entity.type === 'partner') {
              nodeShapeClass = 'rounded-2xl';
              imgShapeClass = 'rounded-2xl';
-             sizeClass = 'w-14 h-14 md:w-16 md:h-16';
-             borderClass = 'border-soft-gold/60 border-[2px]';
+             sizeClass = 'w-16 h-16 md:w-20 md:h-20'; // Increased size
+             borderClass = 'border-brand-orange/60 border-[2px]';
           } else {
              // Project
              nodeShapeClass = 'rounded-lg';
              imgShapeClass = 'rounded-lg';
-             sizeClass = 'w-16 h-16 md:w-20 md:h-20';
-             borderClass = 'border-soft-gold border-[2px]';
+             sizeClass = 'w-12 h-12 md:w-14 md:h-14'; // Decreased size
+             borderClass = 'border-brand-orange border-[2px]';
           }
 
           return (
-             <div
+             <motion.div
                 key={entity.id}
                 ref={el => nodesRef.current[i] = el}
+                initial={{ scale: 0, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ once: false, amount: 0.1 }}
+                transition={{ delay: 0.8 + Math.random() * 0.8, duration: 0.6, type: 'spring' }}
                 className="absolute z-30 cursor-pointer pointer-events-auto transform -translate-x-1/2 -translate-y-1/2 group"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // CLICK DISABLED - Temporarily removed setSelectedEntity
-                  // setSelectedEntity(entity);
-                  console.log('Node clicked - disabled'); // Optional debug
+                  setSelectedEntity(entity);
                 }}
              >
                 {/* Glow Ring on Hover */}
-                <div className="absolute inset-0 rounded-full bg-soft-gold/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-150"></div>
+                <div className="absolute inset-0 rounded-full bg-brand-orange/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-150"></div>
                 
                 <div className={`
                     relative z-10
                     ${sizeClass} ${nodeShapeClass} ${borderClass}
                     flex flex-col items-center justify-center 
-                    bg-charcoal-dark/95 backdrop-blur-xl
-                    shadow-[0_0_15px_rgba(194,167,125,0.15)] transition-all duration-700 ease-out
-                    hover:scale-110 hover:border-amber-400 hover:bg-soft-black hover:shadow-[0_0_40px_rgba(251,191,36,0.5)]
+                    bg-bg-dark/95 backdrop-blur-xl
+                    shadow-[0_0_15px_rgba(255, 140, 66,0.15)] transition-all duration-700 ease-out
+                    hover:scale-110 hover:border-amber-400 hover:bg-brand-dark hover:shadow-[0_0_40px_rgba(251,191,36,0.5)]
                     overflow-hidden
                     ${activeFilter !== 'all' && activeFilter !== entity.type ? 'opacity-30 scale-75 grayscale blur-[2px]' : 'opacity-100 scale-100 grayscale-0 blur-0'}
                 `}>
                    {entity.logoUrl ? (
                      <img src={entity.logoUrl} alt={entity.name} className={`w-full h-full object-cover p-1 opacity-90 mix-blend-screen bg-white transition-transform duration-700 group-hover:scale-110 group-hover:opacity-100 ${imgShapeClass}`} />
                    ) : (
-                     <span className="font-en text-lg text-soft-gold drop-shadow-md">{entity.logoInitial}</span>
+                     <span className="font-en text-lg text-brand-orange drop-shadow-md">{entity.logoInitial}</span>
                    )}
                 </div>
                 {/* Node Label */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-4 py-1.5 bg-charcoal-dark/95 backdrop-blur-xl rounded-full border border-soft-gold/40 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-40 hidden md:flex items-center gap-2 translate-y-2 group-hover:translate-y-0 shadow-xl">
-                  <span className="w-1.5 h-1.5 rounded-full bg-soft-gold animate-pulse"></span>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-4 py-1.5 bg-bg-dark/95 backdrop-blur-xl rounded-full border border-brand-orange/40 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-40 hidden md:flex items-center gap-2 translate-y-2 group-hover:translate-y-0 shadow-xl">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse"></span>
                   <span className="text-xs text-white font-medium drop-shadow-sm tracking-wide">{entity.name}</span>
                 </div>
-             </div>
+             </motion.div>
           )
         })}
 
         {/* Central Core Element */}
-        <div 
-          className={`absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 flex items-center justify-center cursor-pointer group transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeFilter !== 'all' ? 'left-[35%]' : 'left-1/2'}`}
-          onClick={() => {
-            // CLICK DISABLED - Temporarily removed setSelectedEntity
-            // setSelectedEntity({
-            //   id: 'core', type: 'partner', name: 'هسته معماری هورکا', logoInitial: 'C',
-            //   description: 'هسته مرکزی شبکه همکاران. مدیریت استراتژیک و توسعه پروژه‌ها در حوزه خوراک و نوشیدنی با رویکرد نوآورانه. تمامی این شبکه به صورت ارگانیک با محوریت هسته مرکزی مدیریت و توزیع ارزش می‌گردد.',
-            //   activities: ['استراتژی کلان توسعه بین‌الملل', 'تزریق کیفیت و هم‌افزایی ارزش میان اعضا'], connections: [], images: []
-            // })
-            console.log('Core clicked - disabled'); // Optional debug
-          }}
+        <motion.div 
+          initial={{ scale: 0, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          viewport={{ once: false, amount: 0.1 }}
+          transition={{ duration: 1.2, type: 'spring', delay: 0.2 }}
+          className={`absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 flex items-center justify-center cursor-pointer group transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] left-1/2`}
+          onClick={() => setSelectedEntity({
+            id: 'core', type: 'partner', name: 'هسته معماری هورکا', logoInitial: 'C',
+            description: 'هسته مرکزی شبکه همکاران. مدیریت استراتژیک و توسعه پروژه‌ها در حوزه خوراک و نوشیدنی با رویکرد نوآورانه. تمامی این شبکه به صورت ارگانیک با محوریت هسته مرکزی مدیریت و توزیع ارزش می‌گردد.',
+            activities: ['استراتژی کلان توسعه بین‌الملل', 'تزریق کیفیت و هم‌افزایی ارزش میان اعضا'], connections: [], images: []
+          })}
         >
           {/* Pulsing layers behind core */}
-          <div className="absolute inset-0 rounded-full bg-soft-gold/20 blur-xl animate-ping opacity-60 duration-[3000ms]"></div>
+          <div className="absolute inset-0 rounded-full bg-brand-orange/20 blur-xl animate-ping opacity-60 duration-[3000ms]"></div>
           
-          <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-[3px] border-soft-gold bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-soft-gold/40 via-charcoal-dark/80 to-charcoal-dark backdrop-blur-xl flex flex-col items-center justify-center shadow-[0_0_40px_rgba(194,167,125,0.5)] group-hover:scale-110 group-hover:shadow-[0_0_80px_rgba(251,191,36,0.7)] group-hover:border-amber-400 transition-all duration-500 overflow-hidden relative">
+          <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-[3px] border-brand-orange bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-brand-orange/40 via-charcoal-dark/80 to-bg-dark backdrop-blur-xl flex flex-col items-center justify-center shadow-[0_0_40px_rgba(255, 140, 66,0.5)] group-hover:scale-110 group-hover:shadow-[0_0_80px_rgba(251,191,36,0.7)] group-hover:border-amber-400 transition-all duration-500 overflow-hidden relative">
              <div className="absolute top-2 right-3 w-4 h-4 md:top-3 md:right-5 md:w-6 md:h-6 bg-white/30 blur-[2px] rounded-full z-10 transition-transform group-hover:scale-150"></div> 
-             <span className="font-en text-xl md:text-3xl tracking-widest text-soft-gold font-light uppercase z-10 mt-1 drop-shadow-lg group-hover:text-white transition-colors">HoReCa</span>
-             <span className="text-[10px] md:text-sm text-ivory/90 tracking-[0.4em] md:tracking-[0.5em] uppercase font-bold mt-1 z-10">Core</span>
+             {/* اگر عکستان فرمت دیگری مثل jpg یا نام دیگری دارد، مسیر زیر را تغییر دهید */}
+             <img src="/pic/logohc.png" alt="HoReCa Core" className="w-24 h-24 md:w-36 md:h-36 object-contain z-10" />
           </div>
-        </div>
+        </motion.div>
 
       </div>
 
-      {/* Dossier Modal Overlay - DISABLED TEMPORARILY */}
-      {/* 
+      {/* Dossier Modal Overlay */}
       <AnimatePresence>
         {selectedEntity && (
           <motion.div 
@@ -662,13 +702,14 @@ export default function SlideNetwork({ content }: { content?: any }) {
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-ivory w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-soft-gold/30 shadow-2xl flex flex-col relative hide-scrollbar overflow-hidden"
+              className="bg-bg-main w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-brand-orange/30 shadow-2xl flex flex-col relative hide-scrollbar overflow-hidden"
             >
-              <div className="sticky top-0 bg-ivory/95 backdrop-blur-md border-b border-gray-light px-6 md:px-10 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 z-10 transition-colors">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-bg-main/95 backdrop-blur-md border-b border-border-light px-6 md:px-10 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 z-10 transition-colors">
                 <div className="flex items-center gap-6">
                   <div className={`shrink-0 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center overflow-hidden shadow-sm ${
-                    selectedEntity.type === 'project' ? 'bg-white text-soft-black border-gray-light rounded-2xl border-[2px]' : 
-                    'bg-charcoal-dark text-soft-gold border-soft-gold border-[3px] rounded-full'
+                    selectedEntity.type === 'project' ? 'bg-white text-text-primary border-border-light rounded-2xl border-[2px]' : 
+                    'bg-bg-dark text-brand-orange border-brand-orange border-[3px] rounded-full'
                   }`}>
                     {selectedEntity.logoUrl ? (
                          <div className={`w-full h-full p-1.5 ${selectedEntity.type === 'project' ? 'bg-white rounded-2xl' : 'bg-white rounded-full'}`}>
@@ -679,23 +720,23 @@ export default function SlideNetwork({ content }: { content?: any }) {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-xl md:text-3xl font-bold text-soft-black">{selectedEntity.name}</h3>
+                    <h3 className="text-xl md:text-3xl font-bold text-text-primary">{selectedEntity.name}</h3>
                     <div className="flex flex-wrap items-center gap-3 mt-3">
-                       <div className="flex items-center gap-1.5 bg-ivory-dark px-3 py-1 rounded-full border border-gray-light">
+                       <div className="flex items-center gap-1.5 bg-bg-surface px-3 py-1 rounded-full border border-border-light">
                           {getRoleIcon(selectedEntity.type)}
-                          <span className="text-gray-dark text-xs md:text-sm font-medium">{getTypeLabel(selectedEntity.type)}</span>
+                          <span className="text-text-muted text-xs md:text-sm font-medium">{getTypeLabel(selectedEntity.type)}</span>
                        </div>
                        
                        {selectedEntity.location && (
-                          <div className="flex items-center gap-1.5 bg-ivory-dark px-3 py-1 rounded-full border border-gray-light">
-                             <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-soft-black opacity-60" />
-                             <span className="text-gray-dark text-xs md:text-sm">{selectedEntity.location}</span>
+                          <div className="flex items-center gap-1.5 bg-bg-surface px-3 py-1 rounded-full border border-border-light">
+                             <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-text-primary opacity-60" />
+                             <span className="text-text-muted text-xs md:text-sm">{selectedEntity.location}</span>
                           </div>
                        )}
                        {selectedEntity.year && (
-                          <div className="flex items-center gap-1.5 bg-ivory-dark px-3 py-1 rounded-full border border-gray-light">
-                             <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-soft-black opacity-60" />
-                             <span className="font-en text-gray-dark text-xs md:text-sm">{selectedEntity.year}</span>
+                          <div className="flex items-center gap-1.5 bg-bg-surface px-3 py-1 rounded-full border border-border-light">
+                             <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-text-primary opacity-60" />
+                             <span className="font-en text-text-muted text-xs md:text-sm">{selectedEntity.year}</span>
                           </div>
                        )}
                     </div>
@@ -703,16 +744,17 @@ export default function SlideNetwork({ content }: { content?: any }) {
                 </div>
                 <button 
                   onClick={() => setSelectedEntity(null)}
-                  className="absolute sm:relative top-6 left-6 sm:top-0 sm:left-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-gray-light flex items-center justify-center text-gray-dark hover:bg-soft-gold hover:text-white hover:border-soft-gold transition-colors"
+                  className="absolute sm:relative top-6 left-6 sm:top-0 sm:left-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-border-light flex items-center justify-center text-text-muted hover:bg-brand-orange hover:text-white hover:border-brand-orange transition-colors"
                 >
                   <X className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
               </div>
 
+              {/* Modal Content */}
               <div className="p-6 md:p-10 flex flex-col gap-10">
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-6 lg:flex-row lg:items-start justify-between">
-                    <p className="text-soft-black leading-relaxed font-light text-base md:text-lg lg:w-2/3">
+                    <p className="text-text-primary leading-relaxed font-light text-base md:text-lg lg:w-2/3">
                       {selectedEntity.description}
                     </p>
                     <div className="flex flex-wrap gap-3 lg:w-1/3 lg:justify-end">
@@ -721,7 +763,7 @@ export default function SlideNetwork({ content }: { content?: any }) {
                           href={selectedEntity.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-charcoal-dark font-medium rounded-full hover:bg-soft-gold hover:text-white transition-all duration-300 border border-gray-light shadow-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-brand-dark font-medium rounded-full hover:bg-brand-orange hover:text-white transition-all duration-300 border border-border-light shadow-sm"
                         >
                           <Globe className="w-4 h-4" />
                           <span className="text-sm">وب‌سایت رسمی</span>
@@ -733,7 +775,7 @@ export default function SlideNetwork({ content }: { content?: any }) {
                           href={selectedEntity.instagram}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-charcoal-dark font-medium rounded-full hover:bg-gradient-to-tr hover:from-purple-600 hover:to-pink-500 hover:text-white transition-all duration-300 border border-gray-light shadow-sm"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-brand-dark font-medium rounded-full hover:bg-gradient-to-tr hover:from-purple-600 hover:to-pink-500 hover:text-white transition-all duration-300 border border-border-light shadow-sm"
                         >
                           <Instagram className="w-4 h-4" />
                           <span className="font-en text-sm mt-0.5 tracking-wide">Instagram</span>
@@ -745,20 +787,20 @@ export default function SlideNetwork({ content }: { content?: any }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {selectedEntity.activities && selectedEntity.activities.length > 0 && (
-                    <div className="bg-ivory-dark/50 p-6 md:p-8 rounded-3xl border border-gray-light shadow-sm">
+                    <div className="bg-bg-surface/50 p-6 md:p-8 rounded-3xl border border-border-light shadow-sm">
                       <div className="flex items-center gap-3 mb-6">
-                         <div className="w-1.5 h-6 bg-soft-gold rounded-full"></div>
-                         <h4 className="text-soft-black font-semibold text-lg">
+                         <div className="w-1.5 h-6 bg-brand-orange rounded-full"></div>
+                         <h4 className="text-text-primary font-semibold text-lg">
                            {selectedEntity.type === 'project' ? 'اقدامات انجام شده' : 'حوزه فعالیت و راهکارها'}
                          </h4>
                       </div>
                       <div className="grid grid-cols-1 gap-3">
                         {selectedEntity.activities.map((activity, idx) => (
-                           <div key={idx} className="flex items-start gap-3 bg-white p-4 rounded-xl border border-white hover:border-soft-gold/30 transition-colors shadow-sm">
-                              <div className="w-6 h-6 rounded-full bg-soft-gold/10 flex items-center justify-center shrink-0 mt-0.5">
-                                 <CheckCircle2 className="w-3.5 h-3.5 text-soft-gold" />
+                           <div key={idx} className="flex items-start gap-3 bg-white p-4 rounded-xl border border-white hover:border-brand-orange/30 transition-colors shadow-sm">
+                              <div className="w-6 h-6 rounded-full bg-brand-orange/10 flex items-center justify-center shrink-0 mt-0.5">
+                                 <CheckCircle2 className="w-3.5 h-3.5 text-brand-orange" />
                               </div>
-                              <span className="text-charcoal-dark text-sm leading-snug">{activity}</span>
+                              <span className="text-brand-dark text-sm leading-snug">{activity}</span>
                            </div>
                         ))}
                       </div>
@@ -766,11 +808,11 @@ export default function SlideNetwork({ content }: { content?: any }) {
                   )}
 
                   {selectedEntity.connections && selectedEntity.connections.length > 0 && (
-                     <div className="bg-charcoal border border-soft-gold/20 p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-soft-gold/10 blur-3xl rounded-full"></div>
+                     <div className="bg-bg-dark border border-brand-orange/20 p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/10 blur-3xl rounded-full"></div>
                         <div className="flex items-center gap-3 mb-6 relative z-10">
-                           <div className="w-1.5 h-6 bg-soft-gold rounded-full"></div>
-                           <h4 className="text-ivory font-medium text-lg">
+                           <div className="w-1.5 h-6 bg-brand-orange rounded-full"></div>
+                           <h4 className="text-text-on-dark font-medium text-lg">
                               اشتراکات شبکه و مشارکت‌ها
                            </h4>
                         </div>
@@ -779,19 +821,19 @@ export default function SlideNetwork({ content }: { content?: any }) {
                               const conn = displayEntities.find(n => n.id === connId);
                               if (!conn) return null;
                               return (
-                                 <div key={connId} className="group flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-soft-gold/30 hover:bg-white/10 transition-all duration-300">
-                                    <div className="w-12 h-12 rounded-full bg-soft-black flex items-center justify-center shrink-0 border border-soft-gold/20 p-1 group-hover:scale-105 transition-transform duration-300">
+                                 <div key={connId} className="group flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-brand-orange/30 hover:bg-white/10 transition-all duration-300">
+                                    <div className="w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center shrink-0 border border-brand-orange/20 p-1 group-hover:scale-105 transition-transform duration-300">
                                        {conn.logoUrl ? (
                                           <img src={conn.logoUrl} alt={conn.name} className="w-full h-full object-cover mix-blend-screen rounded-full" />
                                        ) : (
-                                          <span className="font-en text-sm text-soft-gold font-bold">{conn.logoInitial}</span>
+                                          <span className="font-en text-sm text-brand-orange font-bold">{conn.logoInitial}</span>
                                        )}
                                     </div>
                                     <div className="flex flex-col flex-1">
-                                      <span className="text-ivory font-medium text-sm group-hover:text-soft-gold transition-colors">{conn.name}</span>
+                                      <span className="text-text-on-dark font-medium text-sm group-hover:text-brand-orange transition-colors">{conn.name}</span>
                                       <span className="text-gray-400 text-xs mt-0.5">{getTypeLabel(conn.type)}</span>
                                     </div>
-                                    <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/30 group-hover:text-soft-gold group-hover:border-soft-gold/50 transition-all shrink-0">
+                                    <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/30 group-hover:text-brand-orange group-hover:border-brand-orange/50 transition-all shrink-0">
                                        <Activity className="w-3.5 h-3.5" />
                                     </div>
                                  </div>
@@ -803,16 +845,16 @@ export default function SlideNetwork({ content }: { content?: any }) {
                 </div>
 
                 {selectedEntity.images && selectedEntity.images.length > 0 && (
-                   <div className="mt-2 pt-8 border-t border-gray-light/60">
+                   <div className="mt-2 pt-8 border-t border-border-light/60">
                      <div className="flex items-center gap-3 mb-8">
-                        <div className="w-8 h-8 rounded-full bg-soft-gold/10 flex items-center justify-center">
-                           <ZoomIn className="w-4 h-4 text-soft-gold" />
+                        <div className="w-8 h-8 rounded-full bg-brand-orange/10 flex items-center justify-center">
+                           <ZoomIn className="w-4 h-4 text-brand-orange" />
                         </div>
-                        <h4 className="text-soft-black font-semibold text-xl leading-none tracking-tight">گالری تصاویر و مستندات</h4>
+                        <h4 className="text-text-primary font-semibold text-xl leading-none tracking-tight">گالری تصاویر و مستندات</h4>
                      </div>
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                        {selectedEntity.images.map((img, idx) => (
-                         <div key={idx} className={`relative aspect-[4/3] bg-gray-light overflow-hidden group isolate rounded-2xl shadow-sm cursor-zoom-in ${idx === 0 && selectedEntity.images.length === 1 ? 'sm:col-span-2 lg:col-span-3 aspect-[16/7]' : ''}`}>
+                         <div key={idx} className={`relative aspect-[4/3] bg-border-light overflow-hidden group isolate rounded-2xl shadow-sm cursor-zoom-in ${idx === 0 && selectedEntity.images.length === 1 ? 'sm:col-span-2 lg:col-span-3 aspect-[16/7]' : ''}`}>
                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none"></div>
                            <img src={img} alt={`${selectedEntity.name} تصویر ${idx+1}`} className="w-full h-full object-cover filter saturate-[0.85] group-hover:saturate-100 group-hover:scale-110 transition-transform duration-[1.5s] ease-out" />
                          </div>
@@ -825,7 +867,6 @@ export default function SlideNetwork({ content }: { content?: any }) {
           </motion.div>
         )}
       </AnimatePresence>
-      */}
     </section>
   );
 }
