@@ -140,35 +140,35 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
         }
 
         @keyframes ls-core-appear {
-          0% { opacity: 0; transform: scale(0.2); }
-          45% { opacity: 1; transform: scale(1.18); }
-          70% { transform: scale(0.94); }
-          100% { opacity: 1; transform: scale(1); }
+          0% { opacity: 0; transform: scale(0.16); }
+          42% { opacity: 1; transform: scale(1.16); filter: drop-shadow(0 0 16px rgba(26, 31, 36, 0.5)); }
+          70% { transform: scale(0.94); filter: drop-shadow(0 0 8px rgba(26, 31, 36, 0.3)); }
+          100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 10px rgba(26, 31, 36, 0.4)); }
         }
         @keyframes ls-core-glow {
-          0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+          0%, 100% { filter: drop-shadow(0 0 10px rgba(26, 31, 36, 0.4)); }
           50% { filter: drop-shadow(0 0 12px rgba(26, 31, 36, 0.35)); }
         }
         @keyframes ls-wire-draw {
           0% { stroke-dashoffset: 1; opacity: 0; }
-          15% { opacity: 0.9; }
-          100% { stroke-dashoffset: 0; opacity: 0.55; }
+          18% { opacity: 0.85; }
+          100% { stroke-dashoffset: 0; opacity: 0.62; }
         }
         @keyframes ls-segment-slide-in {
           0% {
             opacity: 0;
-            transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.7) rotate(calc(var(--rot, 0deg) * 0.1deg));
+            transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.76) rotate(calc(var(--rot, 0deg) * 0.1deg));
           }
-          60% {
+          62% {
             opacity: 1;
-            transform: translate(calc(var(--dx, 0px) * 0.08), calc(var(--dy, 0px) * 0.08)) scale(1.04) rotate(0deg);
+            transform: translate(calc(var(--dx, 0px) * 0.06), calc(var(--dy, 0px) * 0.06)) scale(1.045) rotate(0deg);
           }
-          82% { transform: translate(0, 0) scale(0.98); }
+          82% { transform: translate(0, 0) scale(0.985); }
           100% { opacity: 1; transform: translate(0, 0) scale(1); }
         }
         @keyframes ls-tick-lock {
-          0% { opacity: 0; transform: scale(0); filter: blur(2px); }
-          50% { opacity: 1; transform: scale(1.4); filter: blur(0); }
+          0% { opacity: 0; transform: scale(0.35); filter: blur(2px); }
+          55% { opacity: 1; transform: scale(1.22); filter: blur(0); }
           100% { opacity: 1; transform: scale(1); }
         }
         @keyframes ls-text-rise {
@@ -189,20 +189,23 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
           5% { transform: rotate(-18deg); animation-timing-function: linear; }
           100% { transform: rotate(-378deg); }
         }
-        @keyframes ls-dim-fade { 0% { opacity: 0; } 100% { opacity: 0.45; } }
+        @keyframes ls-dim-fade { 0% { opacity: 0; } 100% { opacity: 0.42; } }
         @keyframes ls-pulse-ring {
-          0% { opacity: 0; transform: scale(0.6); stroke-width: 3px; }
-          40% { opacity: 0.4; }
-          100% { opacity: 0; transform: scale(2.2); stroke-width: 0.5px; }
+          0% { opacity: 0; transform: scale(0.48); stroke-width: 1.5px; }
+          30% { opacity: 0.34; }
+          100% { opacity: 0; transform: scale(1.75); stroke-width: 1.5px; }
         }
-
-        .ls-anim-core { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-core-appear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards, ls-core-glow 2.4s ease-in-out 1.4s infinite; }
-        .ls-anim-pulse-ring { opacity: 0; transform-origin: 200px 200px; animation: ls-pulse-ring 1.2s ease-out 0.55s forwards; }
-        .ls-anim-wire { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; animation: ls-wire-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards; }
-        .ls-anim-segment { opacity: 0; transform-origin: 200px 200px; animation: ls-segment-slide-in 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .ls-anim-tick { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-tick-lock 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .ls-anim-dims { opacity: 0; animation: ls-dim-fade 1s ease 2.2s forwards; }
-
+        .ls-anim-core { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-core-appear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both, ls-core-glow 2.4s ease-in-out 1.4s infinite; }
+        .ls-anim-pulse-ring { opacity: 0; transform-origin: 200px 200px; animation: ls-pulse-ring 1.1s ease-out 0.52s both; }
+        .ls-anim-wire { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; animation: ls-wire-draw 1.05s cubic-bezier(0.4, 0, 0.2, 1) both; }
+        .ls-anim-segment { opacity: 0; transform-origin: 200px 200px; animation: ls-segment-slide-in 0.78s cubic-bezier(0.18, 0.88, 0.24, 1.18) both; }
+        .ls-anim-tick { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-tick-lock 0.44s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
+        .ls-anim-dims { opacity: 0; animation: ls-dim-fade 0.9s ease 1.45s both; }
+        @keyframes ls-bg-disk-fade {
+          0% { opacity: 0; transform: scale(0.9); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .ls-anim-bg-disk { opacity: 0; animation: ls-bg-disk-fade 1.5s ease-out 3.5s forwards; }
         .ls-rotate-outer { transform-origin: 200px 200px; animation: ls-rotate-cw 30s infinite; animation-delay: 4.5s; }
         .ls-rotate-inner { transform-origin: 200px 200px; animation: ls-rotate-ccw 20s infinite; animation-delay: 4.5s; }
         .ls-rotate-mid { transform-origin: 200px 200px; animation: ls-rotate-cw 45s infinite; animation-delay: 4.5s; }
@@ -252,7 +255,7 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
               style={{ scale: logoZoom }}
               className="w-full h-full relative"
             >
-              <div className="absolute inset-[6%] rounded-full bg-white/45 shadow-[0_0_60px_rgba(168,188,168,0.15),inset_0_0_20px_rgba(255,255,255,0.8)] backdrop-blur-[3px]" />
+              <div className="ls-anim-bg-disk absolute inset-[6%] rounded-full bg-white/45 shadow-[0_0_60px_rgba(168,188,168,0.15),inset_0_0_20px_rgba(255,255,255,0.8)] backdrop-blur-[3px]" />
               
               <svg viewBox="0 0 400 400" className="relative w-full h-full block z-10 drop-shadow-xl" role="img" aria-label="HoReCa CORE technical blueprint">
                 <defs>
@@ -388,8 +391,8 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
             className={`flex flex-col justify-center pointer-events-none ${isIntro ? 'items-center' : 'items-center sm:items-start'}`}
             dir="ltr"
           >
-             <div className="font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.5s_forwards] tracking-[0.06em] whitespace-nowrap">
-               HoReCa CORE
+             <div className={`font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.5s_forwards] tracking-[0.06em] ${isIntro ? 'text-center' : 'text-center sm:text-left'} leading-[1.1]`}>
+               HoReCa<br />CORE
              </div>
              <div className="font-lalezar text-3xl sm:text-4xl text-[#1A1F24] opacity-0 animate-[ls-fa-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.7s_forwards] whitespace-nowrap">
                هورکا کور
