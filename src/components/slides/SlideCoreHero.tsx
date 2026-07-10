@@ -89,7 +89,7 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
     const t = setTimeout(() => {
       setIsIntro(false);
       if (onIntroComplete) onIntroComplete();
-    }, 5500);
+    }, 6500);
     return () => clearTimeout(t);
   }, [onIntroComplete]);
 
@@ -139,12 +139,26 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
           mix-blend-mode: multiply;
         }
 
-        @keyframes ls-core-appear {
+                @keyframes ls-core-appear {
           0% { opacity: 0; transform: scale(0.16); }
-          42% { opacity: 1; transform: scale(1.16); filter: drop-shadow(0 0 16px rgba(26, 31, 36, 0.5)); }
-          70% { transform: scale(0.94); filter: drop-shadow(0 0 8px rgba(26, 31, 36, 0.3)); }
+          12% { opacity: 1; transform: scale(3.5); filter: drop-shadow(0 0 20px rgba(26, 31, 36, 0.6)); }
+          75% { opacity: 1; transform: scale(3.5); filter: drop-shadow(0 0 20px rgba(26, 31, 36, 0.6)); }
+          88% { transform: scale(0.94); filter: drop-shadow(0 0 8px rgba(26, 31, 36, 0.3)); }
           100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 10px rgba(26, 31, 36, 0.4)); }
         }
+                @keyframes ls-eye-look {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          12% { transform: translate(0, 0) scale(0); opacity: 0; }
+          16% { transform: translate(0, 0) scale(1); opacity: 1; }
+          25% { transform: translate(6px, -2px) scale(1.1); }
+          40% { transform: translate(5px, -6px) scale(1.1); }
+          55% { transform: translate(-5px, 4px) scale(1.1); }
+          65% { transform: translate(-2px, -1px) scale(1); }
+          75% { transform: translate(-2px, -1px) scale(1); opacity: 1; }
+          85% { transform: translate(-6px, -6px) scale(1); opacity: 1; }
+          100% { transform: translate(-6px, -6px) scale(1); opacity: 1; }
+        }
+
         @keyframes ls-core-glow {
           0%, 100% { filter: drop-shadow(0 0 10px rgba(26, 31, 36, 0.4)); }
           50% { filter: drop-shadow(0 0 12px rgba(26, 31, 36, 0.35)); }
@@ -195,34 +209,35 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
           30% { opacity: 0.34; }
           100% { opacity: 0; transform: scale(1.75); stroke-width: 1.5px; }
         }
-        .ls-anim-core { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-core-appear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both, ls-core-glow 2.4s ease-in-out 1.4s infinite; }
-        .ls-anim-pulse-ring { opacity: 0; transform-origin: 200px 200px; animation: ls-pulse-ring 1.1s ease-out 0.52s both; }
+        .ls-anim-core { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-core-appear 4s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both, ls-core-glow 2.4s ease-in-out 4.5s infinite; }
+        .ls-anim-eye { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-eye-look 4s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both; }
+        .ls-anim-pulse-ring { opacity: 0; transform-origin: 200px 200px; animation: ls-pulse-ring 1.1s ease-out 3.5s both; }
         .ls-anim-wire { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; animation: ls-wire-draw 1.05s cubic-bezier(0.4, 0, 0.2, 1) both; }
         .ls-anim-segment { opacity: 0; transform-origin: 200px 200px; animation: ls-segment-slide-in 0.78s cubic-bezier(0.18, 0.88, 0.24, 1.18) both; }
         .ls-anim-tick { opacity: 0; transform-origin: center; transform-box: fill-box; animation: ls-tick-lock 0.44s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
-        .ls-anim-dims { opacity: 0; animation: ls-dim-fade 0.9s ease 1.45s both; }
+        .ls-anim-dims { opacity: 0; animation: ls-dim-fade 0.9s ease 3.45s both; }
         @keyframes ls-bg-disk-fade {
           0% { opacity: 0; transform: scale(0.9); }
           100% { opacity: 1; transform: scale(1); }
         }
-        .ls-anim-bg-disk { opacity: 0; animation: ls-bg-disk-fade 1.5s ease-out 3.5s forwards; }
-        .ls-rotate-outer { transform-origin: 200px 200px; animation: ls-rotate-cw 30s infinite; animation-delay: 4.5s; }
-        .ls-rotate-inner { transform-origin: 200px 200px; animation: ls-rotate-ccw 20s infinite; animation-delay: 4.5s; }
-        .ls-rotate-mid { transform-origin: 200px 200px; animation: ls-rotate-cw 45s infinite; animation-delay: 4.5s; }
+        .ls-anim-bg-disk { opacity: 0; animation: ls-bg-disk-fade 1.5s ease-out 4.5s forwards; }
+.ls-rotate-outer { transform-origin: 200px 200px; animation: ls-rotate-cw 30s infinite; animation-delay: 5.5s; }
+        .ls-rotate-inner { transform-origin: 200px 200px; animation: ls-rotate-ccw 20s infinite; animation-delay: 5.5s; }
+        .ls-rotate-mid { transform-origin: 200px 200px; animation: ls-rotate-cw 45s infinite; animation-delay: 5.5s; }
 
-        .ls-seg-d1 { animation-delay: 2.50s; --dx: -50px; --dy: -30px; }
-        .ls-seg-d2 { animation-delay: 2.58s; --dx: 55px;  --dy: -25px; }
-        .ls-seg-d3 { animation-delay: 2.66s; --dx: 45px;  --dy: 45px; }
-        .ls-seg-d4 { animation-delay: 2.74s; --dx: -45px; --dy: 40px; }
-        .ls-seg-d5 { animation-delay: 2.82s; --dx: 0px;   --dy: -60px; }
-        .ls-seg-d6 { animation-delay: 2.90s; --dx: 60px;  --dy: 10px; }
-        .ls-seg-d7 { animation-delay: 2.98s; --dx: -25px; --dy: 55px; }
-        .ls-seg-d8 { animation-delay: 3.06s; --dx: -55px; --dy: -15px; }
-        .ls-seg-d9 { animation-delay: 3.12s; --dx: 35px;  --dy: -50px; }
-        .ls-seg-d10{ animation-delay: 3.18s; --dx: 50px;  --dy: 35px; }
-        .ls-tick-d1 { animation-delay: 3.00s; }
-        .ls-tick-d2 { animation-delay: 3.08s; }
-        .ls-tick-d3 { animation-delay: 3.16s; }
+        .ls-seg-d1 { animation-delay: 4.50s; --dx: -50px; --dy: -30px; }
+        .ls-seg-d2 { animation-delay: 4.58s; --dx: 55px;  --dy: -25px; }
+        .ls-seg-d3 { animation-delay: 4.66s; --dx: 45px;  --dy: 45px; }
+        .ls-seg-d4 { animation-delay: 4.74s; --dx: -45px; --dy: 40px; }
+        .ls-seg-d5 { animation-delay: 4.82s; --dx: 0px;   --dy: -60px; }
+        .ls-seg-d6 { animation-delay: 4.90s; --dx: 60px;  --dy: 10px; }
+        .ls-seg-d7 { animation-delay: 4.98s; --dx: -25px; --dy: 55px; }
+        .ls-seg-d8 { animation-delay: 5.06s; --dx: -55px; --dy: -15px; }
+        .ls-seg-d9 { animation-delay: 5.12s; --dx: 35px;  --dy: -50px; }
+        .ls-seg-d10{ animation-delay: 5.18s; --dx: 50px;  --dy: 35px; }
+        .ls-tick-d1 { animation-delay: 5.00s; }
+        .ls-tick-d2 { animation-delay: 5.08s; }
+        .ls-tick-d3 { animation-delay: 5.16s; }
         .ls-tick-d4 { animation-delay: 3.24s; }
       `}</style>
       
@@ -288,11 +303,11 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
                 {/* Wireframe rings */}
                 <g fill="none" stroke="#1a1f24" strokeWidth="0.9" strokeLinecap="round" pathLength={1}>
                   {[48, 68, 88, 108, 128, 148].map((r, i) => (
-                    <circle key={`wire-${i}`} className="ls-anim-wire" cx={CX} cy={CY} r={r} style={{ animationDelay: `${1.5 + i * 0.08}s`, opacity: 0.4 }} />
+                    <circle key={`wire-${i}`} className="ls-anim-wire" cx={CX} cy={CY} r={r} style={{ animationDelay: `${3.5 + i * 0.08}s`, opacity: 0.4 }} />
                   ))}
-                  <path className="ls-anim-wire" d={arcPath(158, -20, 100)} style={{ animationDelay: "1.95s" }} />
-                  <path className="ls-anim-wire" d={arcPath(158, 120, 220)} style={{ animationDelay: "2.0s" }} />
-                  <path className="ls-anim-wire" d={arcPath(158, 240, 320)} style={{ animationDelay: "2.05s" }} />
+                  <path className="ls-anim-wire" d={arcPath(158, -20, 100)} style={{ animationDelay: "3.95s" }} />
+                  <path className="ls-anim-wire" d={arcPath(158, 120, 220)} style={{ animationDelay: "4.0s" }} />
+                  <path className="ls-anim-wire" d={arcPath(158, 240, 320)} style={{ animationDelay: "4.05s" }} />
                 </g>
 
                 {/* OUTER CW */}
@@ -377,8 +392,8 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
                 {/* Static core */}
                 <g>
                   <circle className="ls-anim-pulse-ring" cx={CX} cy={CY} r="28" fill="none" stroke={CORE} strokeWidth="1.5" />
-                  <circle className="ls-anim-core" cx={CX} cy={CY} r="22" fill={CORE} filter="url(#soft-shadow)" />
-                  <circle className="ls-anim-core" cx={CX - 6} cy={CY - 6} r="4" fill="rgba(255,255,255,0.25)" opacity="1" style={{ animationDelay: "0.65s" }} />
+                  <g className="ls-anim-core"><circle cx={CX} cy={CY} r="22" fill={CORE} filter="url(#soft-shadow)" />
+                  <circle className="ls-anim-eye" cx={CX} cy={CY} r="4" fill="rgba(255,255,255,0.8)" opacity="1" /></g>
                 </g>
               </svg>
             </motion.div>
@@ -391,10 +406,10 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
             className={`flex flex-col justify-center pointer-events-none ${isIntro ? 'items-center' : 'items-center sm:items-start'}`}
             dir="ltr"
           >
-             <div className={`font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.5s_forwards] tracking-[0.06em] ${isIntro ? 'text-center' : 'text-center sm:text-left'} leading-[1.1]`}>
+             <div className={`font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_4.5s_forwards] tracking-[0.06em] ${isIntro ? 'text-center' : 'text-center sm:text-left'} leading-[1.1]`}>
                HoReCa<br />CORE
              </div>
-             <div className="font-lalezar text-3xl sm:text-4xl text-[#1A1F24] opacity-0 animate-[ls-fa-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_3.7s_forwards] whitespace-nowrap">
+             <div className="font-lalezar text-3xl sm:text-4xl text-[#1A1F24] opacity-0 animate-[ls-fa-rise_0.85s_cubic-bezier(0.22,1,0.36,1)_4.7s_forwards] whitespace-nowrap">
                هورکا کور
              </div>
           </motion.div>
