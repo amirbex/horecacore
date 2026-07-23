@@ -72,12 +72,18 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 80, damping: 20, restDelta: 0.001 });
   
   // Opacity fade out when scrolling
-  const opacityFade = useTransform(smoothProgress, [0, 0.4, 0.8], [1, 1, 0]);
+  const opacityFade = useTransform(smoothProgress, [0, 0.4, 0.6], [1, 1, 0]);
+  const textOpacityFade = useTransform(smoothProgress, [0, 0.05], [1, 0]);
   
   // Zooming effect for the logo when scrolling
-  const logoZoom = useTransform(smoothProgress, [0, 1], [1, 20]);
-  const logoY = useTransform(smoothProgress, [0, 1], ["0%", "50%"]);
+  const logoZoom = useTransform(smoothProgress, [0, 0.5], [1, 20]);
+  const logoY = useTransform(smoothProgress, [0, 1], ["0vh", "60vh"]);
   
+  // Brand text moving into logo
+  const textMoveProgress = useTransform(smoothProgress, [0, 0.25], [0, 1]);
+  
+  // Late opacity for logo and text
+  const lateOpacity = useTransform(smoothProgress, [0.25, 0.5], [1, 0]);
   
   // Scattering effect for logo pieces
   const scatterOuterScale = useTransform(smoothProgress, [0, 1], [1, 5]);
@@ -98,11 +104,21 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
   return (
     <section 
       ref={containerRef}
-      className="snap-slide sticky top-0 z-0 w-full h-[100dvh] bg-[#f2f5f8] text-[#1A1F24] select-none" 
+      className="snap-slide relative w-full min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden bg-[#f2f5f8] text-[#1A1F24] select-none z-0" 
       id="slide-hero"
     >
-      
       <style>{`
+        .ls-brand-text-move {
+          --text-target-x: 0px;
+          --text-target-y: -90px;
+          transform: translate(calc(var(--text-target-x) * var(--move-progress, 0)), calc(var(--text-target-y) * var(--move-progress, 0)));
+        }
+        @media (min-width: 640px) {
+          .ls-brand-text-move {
+            --text-target-x: -12vw;
+            --text-target-y: 0px;
+          }
+        }
         .ls-stage {
           --core: #1A1F24;
           --sage: #A8BCA8;
@@ -259,38 +275,36 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
         .ls-tick-d4 { animation-delay: 3.24s; }
       `}</style>
       
-      <div className="ls-stage ls-bg w-full h-full absolute inset-0" />
-      <div className="ls-noise w-full h-full absolute inset-0" />
-      <div className="ls-vignette w-full h-full absolute inset-0" />
+      <div className="ls-stage ls-bg" />
+      <div className="ls-noise" />
+      <div className="ls-vignette" />
 
-      <motion.div style={{ opacity: opacityFade }} className={`relative z-10 w-full h-full flex flex-col items-center justify-center px-4 max-w-7xl mx-auto ${isIntro ? "" : "pt-24 pb-16"}`}>
+      <motion.div style={{ opacity: opacityFade }} className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4 max-w-7xl mx-auto pt-24 pb-16">
         
         {/* Animated Logo and Brand Text Wrapper */}
         <motion.div
           layout
-          className={`relative flex items-center justify-center z-20 ${isIntro ? 'flex-col' : 'flex-col sm:flex-row gap-4 mb-4'}`}
+          style={{ scale: logoZoom, y: logoY }}
+          className={`relative flex items-center justify-center z-20 transform-gpu origin-center ${isIntro ? 'flex-col gap-6 mb-8' : 'flex-col sm:flex-row gap-4 mb-4'}`}
           transition={{ duration: 1.5, ease: [0.2, 0.8, 0.2, 1] }}
         >
           {/* Animated Logo Container */}
           <motion.div
             layout
             animate={isIntro ? {
-              width: "min(75vw, 300px)",
-              height: "min(75vw, 300px)"
+              width: "min(75vw, 260px)",
+              height: "min(75vw, 260px)"
             } : {
-              width: "min(35vw, 160px)",
-              height: "min(35vw, 160px)"
+              width: "min(35vw, 140px)",
+              height: "min(35vw, 140px)"
             }}
             transition={{ duration: 1.5, ease: [0.2, 0.8, 0.2, 1] }}
-            className="relative flex justify-center items-center transform-gpu shrink-0"
+            className="relative flex justify-center items-center transform-gpu shrink-0 origin-center"
           >
-            <motion.div
-              style={{ scale: logoZoom, y: logoY }}
-              className="w-full h-full relative"
-            >
-              <div className="ls-anim-bg-disk absolute inset-[25%] rounded-full bg-white/45 shadow-[0_0_60px_rgba(168,188,168,0.15),inset_0_0_20px_rgba(255,255,255,0.8)] " />
+            <div className="w-full h-full relative">
+              <div className="ls-anim-bg-disk absolute inset-[6%] rounded-full bg-white/45 shadow-[0_0_60px_rgba(168,188,168,0.15),inset_0_0_20px_rgba(255,255,255,0.8)] backdrop-blur-[3px]" />
               
-              <svg viewBox="-40 -40 480 480" className="relative w-full h-full block z-10 drop-shadow-xl overflow-visible" style={{ overflow: "visible" }} role="img" aria-label="HoReCa CORE technical blueprint">
+              <svg viewBox="0 0 400 400" className="relative w-full h-full block z-10 drop-shadow-xl" role="img" aria-label="HoReCa CORE technical blueprint">
                 <defs>
                   <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
                     <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#1a1f24" floodOpacity="0.2"/>
@@ -302,7 +316,7 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
                 </defs>
 
                 {/* Dimension guides */}
-                <motion.g animate={{ opacity: isIntro ? 1 : 0 }} transition={{ duration: 1 }} className="ls-anim-dims" stroke="#9db4c7" strokeWidth="0.7" fill="none">
+                <g className="ls-anim-dims" stroke="#9db4c7" strokeWidth="0.7" fill="none">
                   <rect x="58" y="58" width="284" height="284" strokeDasharray="3 4"/>
                   <line x1="58" y1="42" x2="342" y2="42"/><line x1="58" y1="36" x2="58" y2="48"/><line x1="342" y1="36" x2="342" y2="48"/>
                   <text x="200" y="34" textAnchor="middle" fill="#9db4c7" fontSize="10" fontFamily="Inter, sans-serif" stroke="none">H</text>
@@ -316,16 +330,17 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
                   <line x1="70" y1="200" x2="330" y2="200" strokeDasharray="2 5" opacity="0.6"/>
                   <line x1="90" y1="90" x2="310" y2="310" strokeDasharray="1 6" opacity="0.35"/>
                   <line x1="310" y1="90" x2="90" y2="310" strokeDasharray="1 6" opacity="0.35"/>
-                </motion.g>
+                </g>
+
                 {/* Wireframe rings */}
-                <motion.g animate={{ opacity: isIntro ? 1 : 0 }} transition={{ duration: 1 }} fill="none" stroke="#1a1f24" strokeWidth="0.9" strokeLinecap="round" pathLength={1}>
+                <g fill="none" stroke="#1a1f24" strokeWidth="0.9" strokeLinecap="round" pathLength={1}>
                   {[48, 68, 88, 108, 128, 148].map((r, i) => (
                     <circle key={`wire-${i}`} className="ls-anim-wire" cx={CX} cy={CY} r={r} style={{ animationDelay: `${3.5 + i * 0.08}s`, opacity: 0.4 }} />
                   ))}
                   <path className="ls-anim-wire" d={arcPath(158, -20, 100)} style={{ animationDelay: "3.95s" }} />
                   <path className="ls-anim-wire" d={arcPath(158, 120, 220)} style={{ animationDelay: "4.0s" }} />
                   <path className="ls-anim-wire" d={arcPath(158, 240, 320)} style={{ animationDelay: "4.05s" }} />
-                </motion.g>
+                </g>
 
                 {/* OUTER CW */}
                 <motion.g style={{ scale: scatterOuterScale, rotate: scatterOuterRot, transformOrigin: '200px 200px' }}>
@@ -409,38 +424,41 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
                 {/* Static core */}
                 <g>
                   <circle className="ls-anim-pulse-ring" cx={CX} cy={CY} r="28" fill="none" stroke={CORE} strokeWidth="1.5" />
-                  <g className="ls-anim-core"><rect x="-200" y="-200" width="800" height="800" fill="transparent" /><circle cx={CX} cy={CY} r="22" fill={CORE} filter="url(#soft-shadow)" />
+                  <g className="ls-anim-core"><circle cx={CX} cy={CY} r="22" fill={CORE} filter="url(#soft-shadow)" />
                   <circle className="ls-anim-eye" cx={CX} cy={CY} r="4" fill="rgba(255,255,255,0.8)" opacity="1" /></g>
                 </g>
               </svg>
-            </motion.div>
+            </div>
           </motion.div>
           
-          <motion.div style={{ scale: logoZoom, y: logoY }}>
+          <motion.div style={{ scale: logoZoom, opacity: lateOpacity }} className="z-10 origin-center">
+            <motion.div style={{ "--move-progress": textMoveProgress } as any} className="ls-brand-text-move">
             <motion.div
               layout
-              animate={isIntro ? { scale: 1, opacity: 1 } : { scale: 0.85, opacity: 1 }}
+              animate={isIntro ? { scale: 1 } : { scale: 0.85 }}
               transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
-              className={`flex flex-col justify-start pointer-events-none ${isIntro ? 'items-center h-0 overflow-visible mt-6' : 'items-center sm:items-start h-auto'}`}
+              className={`flex flex-col justify-center pointer-events-none ${isIntro ? 'items-center' : 'items-center sm:items-start'}`}
               dir="ltr"
             >
-               <div className={`font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_1.4s_cubic-bezier(0.2,0.8,0.2,1)_4.5s_forwards] tracking-[0.06em] ${isIntro ? 'text-center' : 'text-center sm:text-left'} leading-[1.1]`}>
-                 HoReCa<br />CORE
-               </div>
-               <div className="font-lalezar text-3xl sm:text-4xl text-[#1A1F24] opacity-0 animate-[ls-fa-rise_1.4s_cubic-bezier(0.2,0.8,0.2,1)_4.7s_forwards] whitespace-nowrap">
-                 هورکا کور
-               </div>
+              <div className={`font-montserrat text-2xl sm:text-3xl font-bold text-[#1A1F24] opacity-0 animate-[ls-text-rise_1.4s_cubic-bezier(0.2,0.8,0.2,1)_4.5s_forwards] tracking-[0.06em] ${isIntro ? 'text-center' : 'text-center sm:text-left'} leading-[1.1]`}>
+                HoReCa<br />CORE
+              </div>
+              <div className="font-lalezar text-3xl sm:text-4xl text-[#1A1F24] opacity-0 animate-[ls-fa-rise_1.4s_cubic-bezier(0.2,0.8,0.2,1)_4.7s_forwards] whitespace-nowrap">
+                هورکا کور
+              </div>
+            </motion.div>
             </motion.div>
           </motion.div>
         </motion.div>
 
         {/* Hero Text Content - Animates in after intro */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-          animate={isIntro ? { opacity: 0, y: 30, filter: "blur(10px)", display: "none" } : { opacity: 1, y: 0, filter: "blur(0px)", display: "flex" }}
-          transition={{ duration: 1.5, delay: isIntro ? 0 : 0.4, ease: [0.2, 0.8, 0.2, 1] }}
-          className="z-30 flex-col items-center text-center max-w-4xl mt-2 sm:mt-4 relative"
-        >
+        <motion.div style={{ opacity: textOpacityFade }} className="z-30 flex flex-col items-center relative w-full">
+          <motion.div 
+            initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+            animate={isIntro ? { opacity: 0, y: 30, filter: "blur(10px)", display: "none" } : { opacity: 1, y: 0, filter: "blur(0px)", display: "flex" }}
+            transition={{ duration: 1.5, delay: isIntro ? 0 : 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+            className="flex-col items-center text-center max-w-4xl mt-2 sm:mt-4 relative"
+          >
           <h1 
             className="text-2xl sm:text-3xl md:text-5xl lg:text-5xl font-bold tracking-tight text-[#1A1F24] leading-tight drop-shadow-sm font-sans mt-0"
             dir="rtl"
@@ -496,6 +514,7 @@ export default function SlideCoreHero({ content, onIntroComplete }: { content?: 
               </svg>
             </button>
           </div>
+          </motion.div>
         </motion.div>
         
       </motion.div>
